@@ -51,13 +51,13 @@ export function PrayerList({ requests, members, friendName, selfId, onPray, just
                   borderRadius: radius.sm,
                 }}>
                 <AppText variant="ui" tone="olive">
-                  Gracias. {friendName} no está sola en esto; hoy oraste por ella.
+                  Gracias. Hoy oraste por {friendName}. El pedido no quedó solo.
                 </AppText>
               </View>
             ) : null}
             {isFriend && !mine ? (
               <Button
-                label={prayed ? 'Hoy oraste por ella' : 'Ya oré por ti'}
+                label={prayed ? 'Hoy oraste' : 'Ya oré por ti'}
                 variant={prayed ? 'ghost' : 'olive'}
                 disabled={prayed}
                 style={{ marginTop: space.md }}
