@@ -1,3 +1,4 @@
+import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
@@ -5,11 +6,12 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { isPlanFinished } from '@/features/plans/content';
+import type { MoodId } from '@/lib/types';
 import { colors, radius, space } from '@/theme';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 export default function LecturaScreen() {
   const params = useLocalSearchParams<{ plan?: string }>();
@@ -23,8 +25,11 @@ export default function LecturaScreen() {
     todayGroupReading,
     todayPersonalReading,
     completeToday,
-    shareVerse,
+    saveCheckIn,
+    saveHeartVerse,
     openReading,
+    myCheckInToday,
+    specialFriend,
   } = useAppState();
 
   const plan = kind === 'personal' ? personalPlan ?? groupPlan : groupPlan;
@@ -32,16 +37,30 @@ export default function LecturaScreen() {
   const startDate =
     kind === 'personal' ? (state.personalPlanStartDate ?? state.groupPlanStartDate) : state.groupPlanStartDate;
   const finished = isPlanFinished(plan, startDate, today);
+  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
 
-  const [celebrate, setCelebrate] = useState(false);
+  const [sheet, setSheet] = useState<'celebrate' | 'quiet' | null>(null);
   const [result, setResult] = useState({ personalStreak: 0, groupStreak: 0, groupJustUnlocked: false });
-  const [shared, setShared] = useState(false);
 
   useEffect(() => {
     openReading();
   }, [openReading]);
 
   const alreadyDone = todayStatus === 'completado';
+
+  const persistSheet = (payload: { mood: MoodId; note: string; heartNote: string }) => {
+    saveCheckIn(payload.mood, payload.note);
+    const wantsMural = Boolean(payload.heartNote.trim());
+    if (wantsMural) {
+      saveHeartVerse(day.featured.reference, day.featured.text, payload.heartNote);
+    }
+    setSheet(null);
+    if (wantsMural) {
+      router.push('/(tabs)/grupo');
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
 
   return (
     <Screen>
@@ -94,7 +113,7 @@ export default function LecturaScreen() {
         onPress={async () => {
           const next = completeToday();
           setResult(next);
-          setCelebrate(true);
+          setSheet('celebrate');
           try {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch {
@@ -102,81 +121,33 @@ export default function LecturaScreen() {
           }
         }}
       />
-      {alreadyDone ? (
+      {alreadyDone && !myCheckInToday ? (
         <Button
-          label="Compartir el versículo al grupo"
-          variant="ghost"
+          label="Dejá el check-in de hoy"
+          variant="olive"
           style={{ marginTop: 10 }}
-          onPress={() => {
-            shareVerse(day.featured.reference, day.featured.text);
-            router.push('/(tabs)/grupo');
-          }}
+          onPress={() => setSheet('quiet')}
         />
       ) : null}
-      <Modal visible={celebrate} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.overlay,
-            justifyContent: 'center',
-            padding: space.lg,
-          }}>
-          <View
-            style={{
-              backgroundColor: colors.paper,
-              borderRadius: radius.lg,
-              padding: space.xl,
-            }}>
-            <AppText variant="label" tone="amber">
-              El día cuenta
-            </AppText>
-            <AppText variant="numeral" style={{ marginTop: 8 }}>
-              {result.personalStreak}
-            </AppText>
-            <AppText variant="subtitle">
-              {result.personalStreak === 1 ? 'día seguido, el tuyo' : 'días seguidos, los tuyos'}
-            </AppText>
-            <Ornament />
-            <AppText variant="body" tone="soft">
-              {result.groupJustUnlocked
-                ? `Hoy leyeron todos. La racha del grupo va en ${result.groupStreak}.`
-                : 'Tu racha ya sumó. El grupo espera a que terminen los que faltan.'}
-            </AppText>
-            <View
-              style={{
-                marginTop: space.md,
-                paddingTop: space.md,
-                borderTopWidth: 1,
-                borderTopColor: colors.line,
-              }}>
-              <AppText variant="ui" italic>
-                «{day.featured.text}»
-              </AppText>
-              <AppText variant="caption" tone="amber" style={{ marginTop: 6 }}>
-                {day.featured.reference}
-              </AppText>
-            </View>
-            <Button
-              label={shared ? 'Ya está en el hilo' : 'Compartí este versículo al grupo'}
-              style={{ marginTop: space.lg }}
-              disabled={shared}
-              onPress={() => {
-                shareVerse(day.featured.reference, day.featured.text);
-                setShared(true);
-              }}
-            />
-            <Button
-              label={shared ? 'Ver el hilo' : 'Seguir'}
-              variant="ghost"
-              style={{ marginTop: 8 }}
-              onPress={() => {
-                setCelebrate(false);
-                if (shared) router.push('/(tabs)/grupo');
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+      {alreadyDone ? (
+        <Button
+          label="Guardar un versículo del corazón"
+          variant="ghost"
+          style={{ marginTop: 10 }}
+          onPress={() => setSheet('quiet')}
+        />
+      ) : null}
+      <AfterReadingSheet
+        visible={sheet !== null}
+        variant={sheet === 'quiet' ? 'quiet' : 'celebrate'}
+        streak={result.personalStreak}
+        groupJustUnlocked={result.groupJustUnlocked}
+        groupStreak={result.groupStreak}
+        friendName={friendName}
+        featured={day.featured}
+        onSave={persistSheet}
+        onSkip={() => setSheet(null)}
+      />
     </Screen>
   );
 }

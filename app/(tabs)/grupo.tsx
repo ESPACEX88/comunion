@@ -1,127 +1,109 @@
+import { HeartMural } from '@/components/duo/HeartMural';
+import { CheckInCard } from '@/components/duo/CheckInCard';
+import { PrayerList } from '@/components/duo/PrayerList';
 import { MemberRow } from '@/components/group/MemberRow';
 import { StreakMark } from '@/components/streak/StreakMark';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
-import { formatTime } from '@/lib/date';
+import { PRAYER_MAX } from '@/features/duo/moods';
+import { CURRENT_USER_ID } from '@/features/plans/content';
 import { colors, radius, space } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 
 export default function GrupoScreen() {
-  const { state, members, groupToday, groupStreakCount, postNote } = useAppState();
+  const {
+    state,
+    members,
+    groupToday,
+    groupStreakCount,
+    specialFriend,
+    myCheckInToday,
+    friendCheckInToday,
+    prayerRequests,
+    heartVerses,
+    addPrayerRequest,
+    markPrayed,
+  } = useAppState();
   const [copied, setCopied] = useState(false);
-  const [note, setNote] = useState('');
+  const [prayer, setPrayer] = useState('');
+  const [justPrayedId, setJustPrayedId] = useState<string | null>(null);
+  const self = members.find((member) => member.isSelf) ?? members[0];
+  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const rest = members.filter((member) => !member.isSelf && !member.isSpecialFriend);
 
   return (
     <Screen>
       <AppText variant="label" tone="olive">
-        Grupo
+        Nosotros
       </AppText>
       <AppText variant="display" style={{ marginTop: 6 }}>
-        {state.group.name}
+        Vos y {friendName}
+      </AppText>
+      <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
+        Dentro de {state.group.name}. El dúo es lo íntimo; la mesa, el marco.
       </AppText>
       <Ornament />
-      <Card accent="none">
-        <AppText variant="label" tone="amber">
-          Código de invitación
-        </AppText>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: 8,
-            gap: space.md,
-          }}>
-          <AppText variant="title">{state.group.inviteCode}</AppText>
-          <Button
-            label={copied ? 'Copiado' : 'Copiar'}
-            variant="ghost"
-            onPress={async () => {
-              await Clipboard.setStringAsync(state.group.inviteCode);
-              setCopied(true);
-            }}
-            style={{ paddingVertical: 8, paddingHorizontal: 14 }}
-          />
-        </View>
-        <AppText variant="caption" tone="soft" style={{ marginTop: 6 }}>
-          En el mock no hay servidor: cualquiera con el código «entra» a esta mesa local.
-        </AppText>
-      </Card>
+      <View style={{ gap: space.sm }}>
+        {myCheckInToday ? (
+          <CheckInCard checkIn={myCheckInToday} member={self} />
+        ) : (
+          <Card accent="none">
+            <AppText variant="subtitle">Hoy todavía no dejaste tu check-in.</AppText>
+            <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+              Cuando termines la lectura, aparece en Hoy. {friendName} ya dejó el suyo.
+            </AppText>
+          </Card>
+        )}
+        <CheckInCard checkIn={friendCheckInToday} member={specialFriend} kicker={`${friendName} hoy`} />
+      </View>
       <View style={{ height: space.lg }} />
       <StreakMark
         count={groupStreakCount}
         label="Racha compartida"
+        compact
         hint={
           groupToday.allDone
-            ? 'Hoy el grupo está completo. La racha suma.'
-            : `${groupToday.done} de ${groupToday.total} leyeron hoy. Falta que terminen todos.`
+            ? `Hoy cerraron juntas. La racha suma.`
+            : `${groupToday.done} de ${groupToday.total} leyeron hoy en la mesa.`
         }
       />
       <View style={{ height: space.lg }} />
       <AppText variant="label" tone="amber">
-        Quién leyó hoy
+        Oración mutua
       </AppText>
-      <View style={{ marginTop: 4 }}>
-        {members.map((member) => (
-          <MemberRow
-            key={member.id}
-            member={member}
-            completed={groupToday.completedIds.includes(member.id)}
-          />
-        ))}
-      </View>
+      <AppText variant="ui" tone="soft" style={{ marginTop: 4, marginBottom: space.sm }}>
+        «Estoy orando por…» y «Ora por mí por…». Un pedido corto. Un «ya oré» honesto.
+      </AppText>
+      <PrayerList
+        requests={prayerRequests}
+        members={members}
+        friendName={friendName}
+        justPrayedId={justPrayedId}
+        onPray={(id) => {
+          markPrayed(id);
+          setJustPrayedId(id);
+        }}
+      />
       <View style={{ height: space.md }} />
       <AppText variant="label" tone="amber">
-        Hilo del grupo
+        Ora por mí por…
       </AppText>
-      <View style={{ height: space.sm }} />
-      {state.thread.length === 0 ? (
-        <EmptyState
-          kicker="Notas cortas"
-          title="El hilo está en silencio."
-          body="Cuando termines de leer, dejá un versículo o una línea. A veces eso basta para acompañar a alguien que hoy le cuesta abrir la Escritura."
-        />
-      ) : (
-        <View style={{ gap: 10 }}>
-          {state.thread.map((message) => {
-            const author = members.find((m) => m.id === message.authorId);
-            return (
-              <View
-                key={message.id}
-                style={{
-                  backgroundColor: colors.paper,
-                  borderRadius: radius.md,
-                  borderWidth: 1,
-                  borderColor: colors.line,
-                  padding: space.md,
-                }}>
-                <AppText variant="label" tone="olive">
-                  {author?.name ?? 'Alguien'} · {formatTime(message.createdAt)}
-                </AppText>
-                <AppText variant="body" style={{ marginTop: 6 }}>
-                  {message.text}
-                </AppText>
-              </View>
-            );
-          })}
-        </View>
-      )}
-      <View style={{ height: space.md }} />
       <TextInput
-        value={note}
-        onChangeText={setNote}
-        placeholder="Una nota corta o un versículo…"
+        value={prayer}
+        onChangeText={(value) => setPrayer(value.slice(0, PRAYER_MAX))}
+        placeholder="Algo concreto, sin discurso."
         placeholderTextColor={colors.oliveSoft}
+        maxLength={PRAYER_MAX}
         multiline
         style={{
           minHeight: 72,
+          marginTop: 8,
           borderWidth: 1,
           borderColor: colors.line,
           backgroundColor: colors.paper,
@@ -133,16 +115,72 @@ export default function GrupoScreen() {
           textAlignVertical: 'top',
         }}
       />
+      <AppText variant="caption" tone="soft" style={{ marginTop: 6 }}>
+        {prayer.length}/{PRAYER_MAX}
+      </AppText>
       <Button
-        label="Dejar en el hilo"
+        label="Dejar el pedido"
         variant="olive"
         style={{ marginTop: 10 }}
-        disabled={!note.trim()}
+        disabled={!prayer.trim()}
         onPress={() => {
-          postNote(note);
-          setNote('');
+          addPrayerRequest(prayer);
+          setPrayer('');
         }}
       />
+      <View style={{ height: space.lg }} />
+      <AppText variant="label" tone="amber">
+        Versículos del corazón
+      </AppText>
+      <AppText variant="ui" tone="soft" style={{ marginTop: 4, marginBottom: space.sm }}>
+        No es el hilo de la mesa. Es el mural de las dos: un versículo y por qué se quedó.
+      </AppText>
+      <HeartMural verses={heartVerses} members={members} />
+      <View style={{ height: space.xl }} />
+      <AppText variant="label" tone="soft">
+        El resto de la mesa
+      </AppText>
+      <AppText variant="caption" tone="soft" style={{ marginTop: 6, marginBottom: space.sm }}>
+        Código y los demás de {state.group.name}. El dúo sigue arriba.
+      </AppText>
+      <Card accent="none">
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: space.md,
+          }}>
+          <View>
+            <AppText variant="label" tone="amber">
+              Invitación
+            </AppText>
+            <AppText variant="title">{state.group.inviteCode}</AppText>
+          </View>
+          <Button
+            label={copied ? 'Copiado' : 'Copiar'}
+            variant="ghost"
+            onPress={async () => {
+              await Clipboard.setStringAsync(state.group.inviteCode);
+              setCopied(true);
+            }}
+            style={{ paddingVertical: 8, paddingHorizontal: 14 }}
+          />
+        </View>
+      </Card>
+      <View style={{ marginTop: 4 }}>
+        {rest.map((member) => (
+          <MemberRow
+            key={member.id}
+            member={member}
+            completed={groupToday.completedIds.includes(member.id)}
+          />
+        ))}
+        <MemberRow
+          member={self}
+          completed={groupToday.completedIds.includes(CURRENT_USER_ID)}
+        />
+      </View>
     </Screen>
   );
 }

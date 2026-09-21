@@ -1,8 +1,8 @@
 # Comunión
 
-App cristiana para leer la Biblia **en comunidad**: racha personal y racha de grupo. Un día cuenta **solo cuando se termina la lectura de ese día**, no con un visto suelto.
+App cristiana para leer la Biblia **en dúo**: racha personal, racha compartida, check-in espiritual, oración mutua y versículos del corazón. Un día cuenta **solo cuando se termina la lectura de ese día**, no con un visto suelto.
 
-MVP local (iOS + Android con Expo). Los datos viven en el teléfono. La UI está en español latinoamericano, con vos (estilo es-GT).
+MVP local (iOS + Android con Expo). Los datos viven en el teléfono. La UI está en español latinoamericano, con vos (estilo es-GT). El tono es de pareja de lectura íntima —vos y una amiga especial (Ana, en el mock)— no de un grupo grande de iglesia.
 
 ## Cómo correrla
 
@@ -35,13 +35,24 @@ No hay claves de API ni `.env` secretos. No hace falta cuenta de Expo para el mo
 | Ruta | Qué es |
 | --- | --- |
 | `/onboarding` | Primer arranque: nombre → crear o unirse a un grupo → elegir plan |
-| `/(tabs)` **Hoy** | Racha personal, estado del día (pendiente / en curso / completado), carta de lectura, atajo al grupo |
-| `/lectura` | Pasaje del día, progreso, completar (celebra la racha y permite compartir un versículo) |
-| `/(tabs)` **Grupo** | Nombre, código de invitación (mock), racha compartida, quién leyó hoy, hilo local |
+| `/(tabs)` **Hoy** | Racha personal, estado del día, carta de lectura, check-in espiritual, atajo a Nosotros |
+| `/lectura` | Pasaje del día; al completar se abre un sheet de check-in (ánimo + «¿Qué me dijo Dios hoy?») y versículo del corazón opcional |
+| `/(tabs)` **Grupo** | **Nosotros** (vos y Ana): check-ins del día, oración mutua, mural de versículos; la mesa (código, Mateo, Lucía) queda abajo |
 | `/(tabs)` **Planes** | Plan activo del grupo, plan personal, empezar o cambiar entre los dos ejemplos |
 | `/(tabs)` **Yo** | Perfil, historial simple de racha, interruptor de notificaciones (solo UI), borrar datos locales |
 
-Flujo fresco: instalar → onboarding de tres pasos → pestañas. Completar la lectura de hoy suma la racha personal. Si Ana, Mateo, Lucía y vos ya terminaron, también suma la racha del grupo.
+Flujo fresco: instalar → onboarding de tres pasos → pestañas. Completar la lectura de hoy suma la racha personal, abre el check-in, y si Ana, Mateo, Lucía y vos ya terminaron, también suma la racha compartida.
+
+## Fase 1 (dúo)
+
+Tres piezas, todas locales, tejidas en el flujo que ya existía (no hay pestañas nuevas):
+
+1. **Check-in espiritual** — Después de marcar el día (sheet en Lectura) o desde Hoy si el día ya está completo. Ánimo obligatorio (paz, lucha, gratitud, duda, esperanza) y una línea opcional (máx. 140). Se ve en Hoy y en Nosotros. Ana deja un check-in mock cada día.
+2. **Oración mutua** — En Grupo / Nosotros. Pedidos «Ora por mí por…». Ana trae 1–2 pedidos de ejemplo. «Ya oré por ti» marca que oraste y muestra una confirmación tibia. Se persiste.
+3. **Versículo del corazón** — Desde el sheet post-lectura (nota personal tipo «esto me acordó de vos») o el mural en Nosotros. No es el chat genérico: cada pieza tiene referencia, texto y nota. Ana deja uno sembrado.
+
+El payload de AsyncStorage pasó a `version: 2`. Una instalación v1 se migra y, si no había dúo, se siembran los pedidos y el mural de Ana (`lib/storage.ts`).
+
 
 ## Lógica de rachas (cliente)
 
@@ -77,7 +88,8 @@ El día del plan se elige por calendario desde la fecha en que se empezó (`plan
 | Amigos fijos: Ana, Mateo, Lucía | Miembros reales e invitaciones |
 | Código de invitación copiable, sin servidor | Código único, join real |
 | Notificaciones: solo un interruptor | Push con permiso del sistema |
-| Planes embebidos en el cliente | Catálogo y progreso en la base |
+| Check-ins, oraciones y mural en el mismo JSON | Tablas `check_ins`, `prayer_requests`, `heart_verses` |
+| Ana como amiga especial mock | Vínculo real de dos personas |
 
 La frontera está en `lib/data-source.ts`: mismas firmas (`load` / `save` / `clear`). Las pantallas no hablan con AsyncStorage directo. Cuando exista backend, se cambia la implementación ahí.
 
@@ -86,7 +98,7 @@ La frontera está en `lib/data-source.ts`: mismas firmas (`load` / `save` / `cle
 ```
 app/           rutas de Expo Router (tabs, onboarding, lectura)
 components/    UI, racha, grupo, lectura
-features/      estado de la app, planes, miembros mock
+features/      estado de la app, planes, dúo (ánimos y semillas), miembros mock
 lib/           tipos, fechas, rachas, persistencia, data-source
 theme/         color, tipo, espacio
 ```

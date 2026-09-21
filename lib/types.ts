@@ -39,6 +39,34 @@ export interface Member {
   name: string;
   hue: MemberHue;
   isSelf?: boolean;
+  isSpecialFriend?: boolean;
+}
+
+export type MoodId = 'paz' | 'lucha' | 'gratitud' | 'duda' | 'esperanza';
+
+export interface CheckIn {
+  id: string;
+  authorId: string;
+  date: string;
+  mood: MoodId;
+  note: string;
+}
+
+export interface PrayerRequest {
+  id: string;
+  authorId: string;
+  text: string;
+  createdAt: string;
+  prayedBy: string[];
+}
+
+export interface HeartVerse {
+  id: string;
+  authorId: string;
+  reference: string;
+  text: string;
+  note: string;
+  createdAt: string;
 }
 
 export interface ThreadMessage {
@@ -56,7 +84,7 @@ export interface GroupInfo {
 }
 
 export interface PersistedState {
-  version: 1;
+  version: 2;
   onboardingComplete: boolean;
   userName: string;
   notificationsEnabled: boolean;
@@ -70,6 +98,9 @@ export interface PersistedState {
   personalBest: number;
   groupBest: number;
   thread: ThreadMessage[];
+  checkIns: CheckIn[];
+  prayerRequests: PrayerRequest[];
+  heartVerses: HeartVerse[];
 }
 
 export interface OnboardingDraft {
