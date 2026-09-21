@@ -4,32 +4,32 @@ import { useCallback, useState } from 'react';
 
 /** Al volver a Hoy / Nosotros / Planes / Yo, pide el dúo de nuevo. */
 export function useRefreshOnFocus() {
-  const { live, refreshLive } = useAppState();
+  const { signedIn, refreshLive } = useAppState();
   useFocusEffect(
     useCallback(() => {
-      if (!live) return;
+      if (!signedIn) return;
       void refreshLive();
-    }, [live, refreshLive]),
+    }, [signedIn, refreshLive]),
   );
 }
 
 export function useLivePullToRefresh() {
-  const { live, refreshLive } = useAppState();
+  const { signedIn, refreshLive } = useAppState();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
-    if (!live) return;
+    if (!signedIn) return;
     setRefreshing(true);
     try {
       await refreshLive({ force: true });
     } finally {
       setRefreshing(false);
     }
-  }, [live, refreshLive]);
+  }, [signedIn, refreshLive]);
 
   return {
     refreshing,
-    onRefresh: live ? onRefresh : undefined,
+    onRefresh: signedIn ? onRefresh : undefined,
   };
 }
 

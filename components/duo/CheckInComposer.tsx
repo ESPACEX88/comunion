@@ -10,10 +10,15 @@ import { View } from 'react-native';
 
 type Props = {
   submitLabel?: string;
+  hint?: string;
   onSave: (mood: MoodId, note: string) => void;
 };
 
-export function CheckInComposer({ submitLabel = 'Guardar el check-in', onSave }: Props) {
+export function CheckInComposer({
+  submitLabel = 'Guardar el check-in',
+  hint = 'Una línea alcanza. Es para vos.',
+  onSave,
+}: Props) {
   const [mood, setMood] = useState<MoodId | null>(null);
   const [note, setNote] = useState('');
 
@@ -29,7 +34,7 @@ export function CheckInComposer({ submitLabel = 'Guardar el check-in', onSave }:
       <Field
         value={note}
         onChangeText={(value) => setNote(value.slice(0, CHECK_IN_NOTE_MAX))}
-        placeholder="Una línea alcanza. Es para vos y para ella."
+        placeholder={hint}
         maxLength={CHECK_IN_NOTE_MAX}
         multiline
         tall

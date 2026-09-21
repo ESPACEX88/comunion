@@ -2,6 +2,7 @@ import { calendarDiff } from '@/lib/date';
 import type { Plan, PlanDay } from '@/lib/types';
 
 export const PSALMS_PLAN_ID = 'salmos-camino';
+export const SOLO_PSALMS_PLAN_ID = 'salmos-solitario';
 export const JOHN_PLAN_ID = 'juan-primeros-pasos';
 export const EXAMPLE_INVITE_CODE = 'MESA-7';
 export const EXAMPLE_GROUP_NAME = 'Mesa de Emaús';
@@ -231,6 +232,30 @@ export const PSALMS_PLAN: Plan = {
   days: psalmsDays,
 };
 
+const soloPrompts = [
+  '¿En qué te está invitando el Señor a echar raíces?',
+  '¿Dónde necesitás hoy que Él te pastoree?',
+  '¿De qué miedo querés soltar la mano?',
+  '¿Dónde necesitás recordar que Él es tu refugio?',
+  '¿Qué querés poner delante de Él con honestidad?',
+  '¿En qué área pedís cobijo y cuidado?',
+  '¿Qué parte de vos querés que Él siga conociendo?',
+];
+
+export const SOLO_PSALMS_PLAN: Plan = {
+  id: SOLO_PSALMS_PLAN_ID,
+  title: 'Salmos en solitario',
+  subtitle: 'Siete días, vos y el Señor',
+  description: 'Siete días para leer y anotar lo que Dios te habla a vos.',
+  durationLabel: '7 días',
+  recommendedFor: 'personal',
+  days: psalmsDays.map((day, index) => ({
+    ...day,
+    id: `solo-${day.id}`,
+    prompt: soloPrompts[index],
+  })),
+};
+
 export const JOHN_PLAN: Plan = {
   id: JOHN_PLAN_ID,
   title: 'El evangelio empieza',
@@ -242,7 +267,7 @@ export const JOHN_PLAN: Plan = {
   days: johnDays,
 };
 
-export const ALL_PLANS: Plan[] = [PSALMS_PLAN, JOHN_PLAN];
+export const ALL_PLANS: Plan[] = [PSALMS_PLAN, SOLO_PSALMS_PLAN, JOHN_PLAN];
 
 export function getPlan(id: string): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id);

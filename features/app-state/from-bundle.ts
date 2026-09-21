@@ -1,12 +1,9 @@
-import { PSALMS_PLAN, PSALMS_PLAN_ID, getPlan } from '@/features/plans/content';
-import type { DuoBundle } from '@/lib/supabase-api';
-import type { CheckIn, DuoAnswer, HeartVerse, MoodId, PersistedState, Plan, PrayerRequest } from '@/lib/types';
+import { asMood } from '@/features/duo/moods';
+import { PSALMS_PLAN, PSALMS_PLAN_ID, SOLO_PSALMS_PLAN, getPlan } from '@/features/plans/content';
+import type { DuoBundle, RemotePersonalDay, RemotePersonalPlan } from '@/lib/supabase-api';
+import type { CheckIn, DuoAnswer, HeartVerse, PersistedState, Plan, PrayerRequest } from '@/lib/types';
 
-const MOODS: MoodId[] = ['paz', 'lucha', 'gratitud', 'duda', 'esperanza'];
-
-export function asMood(value: string): MoodId {
-  return MOODS.includes(value as MoodId) ? (value as MoodId) : 'paz';
-}
+export { asMood };
 
 export function liveCompletions(bundle: DuoBundle): Record<string, string[]> {
   const map: Record<string, string[]> = {};
@@ -15,6 +12,25 @@ export function liveCompletions(bundle: DuoBundle): Record<string, string[]> {
     map[row.userId] = map[row.userId] ? [...map[row.userId], row.completedOn] : [row.completedOn];
   }
   return map;
+}
+
+export function overlayPersonalPlan(plan: RemotePersonalPlan, days: RemotePersonalDay[]): Plan {
+  const catalog = SOLO_PSALMS_PLAN;
+  const byNumber = new Map(days.map((day) => [day.dayNumber, day]));
+  return {
+    ...catalog,
+    title: plan.title || catalog.title,
+    description: plan.description || catalog.description,
+    days: catalog.days.map((day) => {
+      const remote = byNumber.get(day.dayNumber);
+      if (!remote) return day;
+      return {
+        ...day,
+        reference: remote.scriptureRef || day.reference,
+        prompt: remote.prompt ?? day.prompt,
+      };
+    }),
+  };
 }
 
 export function overlayPlan(bundle: DuoBundle): Plan {

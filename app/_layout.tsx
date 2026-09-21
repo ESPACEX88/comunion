@@ -93,6 +93,7 @@ function ThemedRoot() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="lectura" />
             <Stack.Screen name="nosotros" />
+            <Stack.Screen name="diario" />
           </Stack>
         </AppStateProvider>
       </AuthProvider>

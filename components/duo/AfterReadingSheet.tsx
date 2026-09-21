@@ -18,6 +18,7 @@ type Props = {
   friendName: string;
   featured: FeaturedVerse;
   question?: string;
+  hasDuo?: boolean;
   onSave: (payload: { mood: MoodId; note: string; heartNote: string; duoAnswer: string }) => void;
   onSkip: () => void;
 };
@@ -31,6 +32,7 @@ export function AfterReadingSheet({
   friendName,
   featured,
   question,
+  hasDuo = true,
   onSave,
   onSkip,
 }: Props) {
@@ -77,9 +79,11 @@ export function AfterReadingSheet({
                 </AppText>
                 <Ornament />
                 <AppText variant="body" tone="soft">
-                  {groupJustUnlocked
+                  {hasDuo && groupJustUnlocked
                     ? `Hoy también cerraron con ${friendName}. La racha compartida va en ${groupStreak}.`
-                    : `Antes de seguir, dejale a ${friendName} —y a vos— cómo te encontró el texto.`}
+                    : hasDuo
+                      ? `Antes de seguir, dejale a ${friendName} —y a vos— cómo te encontró el texto.`
+                      : 'Antes de seguir, dejá cómo te encontró el texto. Queda en tu espacio.'}
                 </AppText>
               </>
             ) : (
@@ -114,34 +118,36 @@ export function AfterReadingSheet({
             <AppText variant="caption" tone="soft">
               {note.length}/{CHECK_IN_NOTE_MAX} · opcional
             </AppText>
-            <View
-              style={{
-                marginTop: space.md,
-                paddingTop: space.md,
-                borderTopWidth: 1,
-                borderTopColor: colors.line,
-              }}>
-              <AppText variant="label" tone="olive">
-                Versículo del corazón
-              </AppText>
-              <AppText variant="ui" italic style={{ marginTop: 8 }}>
-                «{featured.text}»
-              </AppText>
-              <AppText variant="caption" tone="amber" style={{ marginTop: 6 }}>
-                {featured.reference}
-              </AppText>
-              <Field
-                value={heartNote}
-                onChangeText={(value) => setHeartNote(value.slice(0, HEART_NOTE_MAX))}
-                placeholder={`Esto me acordó de ${friendName} / de lo que hablamos…`}
-                maxLength={HEART_NOTE_MAX}
-                multiline
-                tall
-              />
-              <AppText variant="caption" tone="soft">
-                Si escribís una nota, se guarda en el mural de las dos.
-              </AppText>
-            </View>
+            {hasDuo ? (
+              <View
+                style={{
+                  marginTop: space.md,
+                  paddingTop: space.md,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.line,
+                }}>
+                <AppText variant="label" tone="olive">
+                  Versículo del corazón
+                </AppText>
+                <AppText variant="ui" italic style={{ marginTop: 8 }}>
+                  «{featured.text}»
+                </AppText>
+                <AppText variant="caption" tone="amber" style={{ marginTop: 6 }}>
+                  {featured.reference}
+                </AppText>
+                <Field
+                  value={heartNote}
+                  onChangeText={(value) => setHeartNote(value.slice(0, HEART_NOTE_MAX))}
+                  placeholder={`Esto me acordó de ${friendName} / de lo que hablamos…`}
+                  maxLength={HEART_NOTE_MAX}
+                  multiline
+                  tall
+                />
+                <AppText variant="caption" tone="soft">
+                  Si escribís una nota, se guarda en el mural de las dos.
+                </AppText>
+              </View>
+            ) : null}
             {question ? (
               <View
                 style={{

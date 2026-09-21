@@ -26,6 +26,7 @@ export default function GrupoScreen() {
     myCheckInToday,
     friendCheckInToday,
     live,
+    hasDuo,
     selfId,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
@@ -40,6 +41,31 @@ export default function GrupoScreen() {
       : myCheckInToday
         ? `${friendName} todavía no dejó el suyo.`
         : 'Cuando terminen el pasaje, el ánimo queda aquí.';
+
+  if (!hasDuo) {
+    return (
+      <Screen refreshing={refreshing} onRefresh={onRefresh}>
+        <AppText variant="label" tone="olive">
+          Nosotros
+        </AppText>
+        <AppText variant="title" style={{ marginTop: 8 }}>
+          Todavía no hay dúo
+        </AppText>
+        <Ornament />
+        <AppText variant="body" tone="soft">
+          Hoy ya es tu espacio. Cuando quieras leer con alguien, creá el dúo o uníte con un código.
+        </AppText>
+        <View style={{ height: space.xl }} />
+        <Button label="Crear o unirme a un dúo" onPress={() => router.push('/onboarding/grupo')} />
+        <Button
+          label="Volver a tu momento"
+          variant="ghost"
+          style={{ marginTop: 10 }}
+          onPress={() => router.push('/(tabs)')}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>

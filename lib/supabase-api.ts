@@ -1,7 +1,8 @@
 import { PSALMS_PLAN } from '@/features/plans/content';
 import { todayKey } from '@/lib/date';
 import { getSupabase } from '@/lib/supabase';
-import type { MoodId } from '@/lib/types';
+import { asMood } from '@/features/duo/moods';
+import type { JournalEntry, MoodId } from '@/lib/types';
 
 export type RemoteMember = {
   userId: string;
@@ -278,7 +279,7 @@ export async function loadDuoBundle(userId: string): Promise<DuoBundle | null> {
 
 export async function upsertCheckIn(input: {
   userId: string;
-  duoId: string;
+  duoId?: string | null;
   mood: MoodId;
   note: string;
   checkedOn: string;
@@ -287,7 +288,7 @@ export async function upsertCheckIn(input: {
   const { error } = await supabase.from('check_ins').upsert(
     {
       user_id: input.userId,
-      duo_id: input.duoId,
+      duo_id: input.duoId ?? null,
       mood: input.mood,
       note: input.note || null,
       checked_on: input.checkedOn,
@@ -380,4 +381,152 @@ export async function updateDisplayName(userId: string, displayName: string) {
     .update({ display_name: displayName, updated_at: new Date().toISOString() })
     .eq('id', userId);
   if (error) throw new Error(error.message);
+}
+
+export type RemotePersonalPlan = {
+  id: string;
+  title: string;
+  description: string | null;
+  days: number;
+  startsOn: string;
+};
+
+export type RemotePersonalDay = {
+  dayNumber: number;
+  scriptureRef: string;
+  prompt: string | null;
+};
+
+export type RemotePersonalCompletion = {
+  dayNumber: number;
+  completedOn: string;
+  note: string | null;
+};
+
+export async function ensurePersonalSalmosPlan(): Promise<RemotePersonalPlan> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('ensure_personal_salmos_plan');
+  if (error || !data) throw new Error(explain(error, 'No se pudo abrir el plan en solitario.'));
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    days: data.days,
+    startsOn: data.starts_on,
+  };
+}
+
+export async function loadPersonalDays(planId: string): Promise<RemotePersonalDay[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('personal_plan_days')
+    .select('day_number, scripture_ref, prompt')
+    .eq('plan_id', planId)
+    .order('day_number');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    dayNumber: row.day_number,
+    scriptureRef: row.scripture_ref,
+    prompt: row.prompt,
+  }));
+}
+
+export async function loadPersonalCompletions(planId: string): Promise<RemotePersonalCompletion[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('personal_completions')
+    .select('day_number, completed_on, note')
+    .eq('plan_id', planId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    dayNumber: row.day_number,
+    completedOn: row.completed_on,
+    note: row.note,
+  }));
+}
+
+export async function upsertPersonalCompletion(input: {
+  planId: string;
+  userId: string;
+  dayNumber: number;
+  completedOn: string;
+  note?: string;
+}) {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('personal_completions').upsert(
+    {
+      plan_id: input.planId,
+      user_id: input.userId,
+      day_number: input.dayNumber,
+      completed_on: input.completedOn,
+      note: input.note?.trim() || null,
+    },
+    { onConflict: 'plan_id,user_id,day_number' },
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function loadOwnCheckIns(userId: string): Promise<RemoteCheckIn[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('check_ins')
+    .select('*')
+    .eq('user_id', userId)
+    .order('checked_on', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    mood: row.mood,
+    note: row.note ?? '',
+    checkedOn: row.checked_on,
+  }));
+}
+
+export async function loadJournalEntries(): Promise<JournalEntry[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('*')
+    .order('entry_on', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    date: row.entry_on,
+    title: row.title ?? '',
+    body: row.body,
+    mood: row.mood ? asMood(row.mood) : null,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function insertJournalEntry(input: {
+  userId: string;
+  date: string;
+  title: string;
+  body: string;
+  mood: MoodId | null;
+}): Promise<JournalEntry> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .insert({
+      user_id: input.userId,
+      entry_on: input.date,
+      title: input.title.trim() || null,
+      body: input.body,
+      mood: input.mood,
+    })
+    .select('*')
+    .single();
+  if (error || !data) throw new Error(explain(error, 'No se pudo guardar la entrada.'));
+  return {
+    id: data.id,
+    date: data.entry_on,
+    title: data.title ?? '',
+    body: data.body,
+    mood: data.mood ? asMood(data.mood) : null,
+    createdAt: data.created_at,
+  };
 }

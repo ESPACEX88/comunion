@@ -79,6 +79,15 @@ export interface HeartVerse {
   createdAt: string;
 }
 
+export interface JournalEntry {
+  id: string;
+  date: string;
+  title: string;
+  body: string;
+  mood: MoodId | null;
+  createdAt: string;
+}
+
 export interface ThreadMessage {
   id: string;
   authorId: string;
@@ -96,10 +105,12 @@ export interface GroupInfo {
 export interface PersistedState {
   version: 4;
   onboardingComplete: boolean;
+  duoEnabled: boolean;
   userName: string;
   userId: string | null;
   remoteDuoId: string | null;
   remotePlanId: string | null;
+  remotePersonalPlanId: string | null;
   notificationsEnabled: boolean;
   group: GroupInfo;
   groupPlanId: string;
@@ -107,7 +118,9 @@ export interface PersistedState {
   groupPlanStartDate: string;
   personalPlanStartDate: string | null;
   userCompletedDates: string[];
+  personalCompletedDates: string[];
   inProgressDate: string | null;
+  personalInProgressDate: string | null;
   personalBest: number;
   groupBest: number;
   thread: ThreadMessage[];
@@ -115,6 +128,7 @@ export interface PersistedState {
   prayerRequests: PrayerRequest[];
   heartVerses: HeartVerse[];
   duoAnswers: DuoAnswer[];
+  journalEntries: JournalEntry[];
   graceDates: string[];
 }
 

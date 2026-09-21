@@ -17,13 +17,13 @@ export default function Index() {
     return <Redirect href="/onboarding" />;
   }
 
-  if (configured && session && !state.remoteDuoId) {
+  if (state.onboardingComplete || state.remoteDuoId) {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  if (configured && session) {
     return <Redirect href="/onboarding/grupo" />;
   }
 
-  if (!state.onboardingComplete && !state.remoteDuoId) {
-    return <Redirect href="/onboarding" />;
-  }
-
-  return <Redirect href="/(tabs)" />;
+  return <Redirect href="/onboarding" />;
 }
