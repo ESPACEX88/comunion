@@ -3,6 +3,9 @@
     "name": "Comunión",
     "slug": "comunion",
     "version": "0.1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "comunion",

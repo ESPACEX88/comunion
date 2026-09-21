@@ -32,6 +32,7 @@ npm run typecheck
 npm run android
 npm run ios
 npm run web
+npm run update:preview
 ```
 
 El `.env` está en `.gitignore`. El repo solo trae placeholders.
@@ -39,6 +40,86 @@ El `.env` está en `.gitignore`. El repo solo trae placeholders.
 ### Confirmar email
 
 Por defecto Auth puede pedir confirmación de correo. Mientras prueban, en **Authentication → Providers → Email** desactivá **Confirm email**, o confirmá el usuario a mano en **Authentication → Users**. Si no, `signUp` crea la cuenta pero no deja sesión hasta confirmar.
+
+## Abrir sin la PC (EAS Update + Expo Go)
+
+Esto publica un **update hospedado** (plan gratis de Expo) y se abre en **Expo Go**. José no tiene que dejar Metro corriendo. **No es** una app nativa con ícono propio en el home: eso sigue pidiendo cuenta de Apple Developer + un build de EAS/Xcode.
+
+El repo **no** trae `extra.eas.projectId` ni `updates.url` inventados. Esos IDs los escribe Expo la primera vez que José corre `eas init` / `eas update:configure`. Después hay que commitear lo que esos comandos agreguen a `app.json` (el `projectId` no es secreto).
+
+### Una sola vez (cuenta + proyecto)
+
+1. Creá una cuenta gratis en [expo.dev/signup](https://expo.dev/signup).
+2. En la carpeta del repo:
+
+```bash
+npm install
+npm i -g eas-cli
+# si no querés instalar global: usá npx eas-cli@latest en vez de eas
+eas login
+eas whoami
+```
+
+3. Ligá el repo al proyecto de Expo (slug `comunion`) y dejá lista la config de updates:
+
+```bash
+eas init
+eas update:configure
+```
+
+`eas init` crea el proyecto en tu org si todavía no existe. `eas update:configure` escribe en `app.json`:
+
+- `extra.eas.projectId` (UUID real de expo.dev)
+- `updates.url` → `https://u.expo.dev/<ese-projectId>`
+- `runtimeVersion` (este repo ya trae `{ "policy": "appVersion" }`; hoy eso vale **`0.1.0`**, el `version` de `app.json`)
+
+Los channels `preview` y `production` ya están en `eas.json`. No hace falta un build nativo para abrir el update en Expo Go.
+
+4. Embebí las claves públicas de Supabase en el update. En SDK 55+ `eas update` **exige** `--environment`. Las `EXPO_PUBLIC_*` se hornean en el JS al publicar; si no están en el environment de EAS, la app abre sin nube.
+
+En [expo.dev](https://expo.dev) → el proyecto Comunión → **Environment variables**, environment **preview**, o por CLI (valores del `.env` local; **nunca** la `service_role`):
+
+```bash
+eas env:set --name EXPO_PUBLIC_SUPABASE_URL --value https://zpjrfxbrfdapoufdvrqr.supabase.co --environment preview --visibility plaintext
+eas env:set --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value PEGA_LA_ANON_KEY --environment preview --visibility sensitive
+```
+
+### Publicar (cada vez que quieras compartir)
+
+```bash
+npm run update:preview
+```
+
+Equivale a:
+
+```bash
+eas update --channel preview --message "Comunión preview" --environment preview
+```
+
+Cambio el mensaje si hace falta: `eas update --channel preview --message "arreglo recordatorios" --environment preview`.
+
+### Cómo abrir (José y Jazmín)
+
+1. En [expo.dev](https://expo.dev) → proyecto → **Updates** → el update de `preview` → **Open in Expo Go** (o el QR).
+2. O armá el QR (el `projectId` sale de `app.json` → `extra.eas.projectId` después del `eas init`):
+
+```
+https://qr.expo.dev/eas-update?slug=exp&projectId=PEGA-EL-PROJECT-ID&runtimeVersion=0.1.0&channel=preview
+```
+
+`slug=exp` apunta a Expo Go (no a un development build). Si cambiás `version` en `app.json`, cambiá `runtimeVersion` en esa URL. Para el link en texto, agregá `&format=url`.
+
+**Jazmín:** mismo QR o link. Invitala a la org/proyecto en expo.dev, o compartile el update. En **iPhone** Expo Go casi siempre pide que esté **logueada** (misma cuenta o cuenta con acceso al proyecto). Android suele ser más permisivo.
+
+### Qué es / qué no es
+
+| Sí (este flujo) | No (todavía) |
+| --- | --- |
+| Expo Go + update hospedado, gratis | App con ícono propio en el home |
+| José publica con 1 comando después del setup | Dejar la PC con Metro |
+| Auth / dúo / recordatorios locales via el JS publicado | Push remoto / EAS Build nativo |
+
+Build nativo (`eas build`) y App Store quedan para cuando haya cuenta de Apple Developer. Este PR no publica nada: hace falta el login de José.
 
 ## Mapa de pantallas
 
@@ -171,6 +252,6 @@ Tipografía: **Fraunces** (titulares y UI) y **Literata** (pasajes). Paleta: cre
 
 ## Notas
 
-- Expo SDK 57, React Native 0.86, TypeScript, Expo Router.
+- Expo SDK 57, React Native 0.86, TypeScript, Expo Router. `expo-updates` ~57 está instalado; el `projectId` de EAS lo escribe José con `eas init`.
 - El filesystem de un host efímero (p. ej. Render) no aplica a esta app móvil; aquí la persistencia es AsyncStorage en el dispositivo.
 - Los extractos bíblicos son de demostración, de dominio público / parafraseados para el MVP. Más adelante conviene enlazar una traducción con licencia clara.
