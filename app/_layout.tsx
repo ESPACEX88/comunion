@@ -1,4 +1,5 @@
 import { AppStateProvider } from '@/features/app-state/AppStateProvider';
+import { AuthProvider } from '@/features/auth/AuthProvider';
 import { colors } from '@/theme';
 import {
   Fraunces_400Regular,
@@ -68,20 +69,22 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={ComuniónTheme}>
-      <AppStateProvider>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.cream },
-            animation: 'fade',
-          }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="lectura" />
-        </Stack>
-      </AppStateProvider>
+      <AuthProvider>
+        <AppStateProvider>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.cream },
+              animation: 'fade',
+            }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="lectura" />
+          </Stack>
+        </AppStateProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

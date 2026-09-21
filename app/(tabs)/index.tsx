@@ -10,6 +10,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { partnerFirstName } from '@/features/duo/labels';
 import { isDuoPlan } from '@/features/plans/content';
 import { formatLongDate, greeting, yesterday } from '@/lib/date';
 import { colors, space } from '@/theme';
@@ -38,10 +39,12 @@ export default function HoyScreen() {
     friendDuoAnswerToday,
     saveDuoAnswer,
     useGraceDay,
+    live,
+    syncError,
   } = useAppState();
 
   const self = members.find((member) => member.isSelf) ?? members[0];
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
   const duo = isDuoPlan(groupPlan);
   const usedGraceYesterday = state.graceDates.includes(yesterday(today));
   const cta =
@@ -75,6 +78,26 @@ export default function HoyScreen() {
         {duo ? ' · plan de a dos' : ''}
       </AppText>
       <Ornament />
+      {syncError ? (
+        <AppText variant="ui" style={{ color: colors.terracotta, marginBottom: space.md }}>
+          {syncError}
+        </AppText>
+      ) : null}
+      {live && specialFriend.id === 'pending' ? (
+        <Card accent="olive">
+          <AppText variant="label" tone="olive">
+            Esperando a tu dúo
+          </AppText>
+          <AppText variant="subtitle" style={{ marginTop: 6 }}>
+            Código {state.group.inviteCode}
+          </AppText>
+          <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+            Compartilo. Cuando se una, el check-in, la pregunta y la racha se ven en los dos
+            teléfonos.
+          </AppText>
+        </Card>
+      ) : null}
+      {live && specialFriend.id === 'pending' ? <View style={{ height: space.md }} /> : null}
       <GraceCard offer={grace} friendName={friendName} onUseGrace={useGraceDay} />
       {grace.kind !== 'none' ? <View style={{ height: space.md }} /> : null}
       <StreakMark count={personalStreak} label="Racha personal" hint={streakHint} />
@@ -115,11 +138,24 @@ export default function HoyScreen() {
         </Card>
       )}
       <View style={{ height: space.md }} />
-      <CheckInCard
-        checkIn={friendCheckInToday}
-        member={specialFriend}
-        kicker={`${friendName} hoy`}
-      />
+      {friendCheckInToday ? (
+        <CheckInCard
+          checkIn={friendCheckInToday}
+          member={specialFriend}
+          kicker={`${friendName} hoy`}
+        />
+      ) : (
+        <Card accent="none">
+          <AppText variant="subtitle">
+            {specialFriend.id === 'pending'
+              ? 'Todavía no hay nadie del otro lado.'
+              : `${friendName} todavía no dejó el check-in de hoy.`}
+          </AppText>
+          <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+            No hay apuro. El pasaje espera.
+          </AppText>
+        </Card>
+      )}
       {isDuoActive && todayGroupReading.prompt ? (
         <>
           <View style={{ height: space.lg }} />

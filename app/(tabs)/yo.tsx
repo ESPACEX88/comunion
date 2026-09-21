@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { partnerFirstName } from '@/features/duo/labels';
 import { lastNDays, parseDayKey } from '@/lib/date';
 import { colors, space } from '@/theme';
 import { router } from 'expo-router';
@@ -25,10 +27,12 @@ export default function YoScreen() {
     useGraceDay,
     simulateMissedDay,
     specialFriend,
+    live,
   } = useAppState();
+  const { signOut, user } = useAuth();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
 
   return (
     <Screen>
@@ -41,7 +45,13 @@ export default function YoScreen() {
           <AppText variant="title">{state.userName}</AppText>
           <AppText variant="ui" tone="soft">
             {state.group.name}
+            {live ? ' · en la nube' : ''}
           </AppText>
+          {user?.email ? (
+            <AppText variant="caption" tone="soft">
+              {user.email}
+            </AppText>
+          ) : null}
         </View>
       </View>
       <Ornament />
@@ -129,8 +139,22 @@ export default function YoScreen() {
         Datos locales
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 6, marginBottom: space.md }}>
-        Todo vive en este teléfono. Borrar te lleva otra vez al onboarding.
+        {live
+          ? 'Lo del dúo vive en Supabase. Este teléfono guarda una caché. Cerrar sesión no borra lo compartido.'
+          : 'Todo vive en este teléfono. Borrar te lleva otra vez al onboarding.'}
       </AppText>
+      {live ? (
+        <Button
+          label="Cerrar sesión"
+          variant="olive"
+          style={{ marginBottom: space.md }}
+          onPress={async () => {
+            await signOut();
+            await resetLocalData();
+            router.replace('/onboarding');
+          }}
+        />
+      ) : null}
       <Button
         label="Probar un día saltado (demo)"
         variant="olive"

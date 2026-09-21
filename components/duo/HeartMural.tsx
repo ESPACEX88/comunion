@@ -1,6 +1,5 @@
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { CURRENT_USER_ID } from '@/features/plans/content';
 import type { HeartVerse, Member } from '@/lib/types';
 import { colors, radius, space } from '@/theme';
 import { View } from 'react-native';
@@ -8,9 +7,10 @@ import { View } from 'react-native';
 type Props = {
   verses: HeartVerse[];
   members: Member[];
+  selfId: string;
 };
 
-export function HeartMural({ verses, members }: Props) {
+export function HeartMural({ verses, members, selfId }: Props) {
   if (verses.length === 0) {
     return (
       <EmptyState
@@ -25,7 +25,7 @@ export function HeartMural({ verses, members }: Props) {
     <View style={{ gap: 12 }}>
       {verses.map((verse) => {
         const author = members.find((member) => member.id === verse.authorId);
-        const mine = verse.authorId === CURRENT_USER_ID;
+        const mine = verse.authorId === selfId;
         return (
           <View
             key={verse.id}

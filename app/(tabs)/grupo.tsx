@@ -12,7 +12,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { PRAYER_MAX } from '@/features/duo/moods';
-import { CURRENT_USER_ID } from '@/features/plans/content';
+import { partnerFirstName } from '@/features/duo/labels';
 import { colors, radius, space } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
@@ -39,12 +39,14 @@ export default function GrupoScreen() {
     friendDuoAnswerToday,
     saveDuoAnswer,
     useGraceDay,
+    live,
+    selfId,
   } = useAppState();
   const [copied, setCopied] = useState(false);
   const [prayer, setPrayer] = useState('');
   const [justPrayedId, setJustPrayedId] = useState<string | null>(null);
   const self = members.find((member) => member.isSelf) ?? members[0];
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
   const rest = members.filter((member) => !member.isSelf && !member.isSpecialFriend);
 
   return (
@@ -56,8 +58,15 @@ export default function GrupoScreen() {
         Vos y {friendName}
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-        Dentro de {state.group.name}. El dúo es lo íntimo; la mesa, el marco.
-        {isDuoActive ? ' Están en un plan de a dos.' : ''}
+        {live
+          ? `Código ${state.group.inviteCode}. ${
+              specialFriend.id === 'pending'
+                ? 'Todavía falta que se una.'
+                : `Están en un plan de a dos con ${friendName}.`
+            }`
+          : `Dentro de ${state.group.name}. El dúo es lo íntimo; la mesa, el marco.${
+              isDuoActive ? ' Están en un plan de a dos.' : ''
+            }`}
       </AppText>
       <Ornament />
       <View style={{ gap: space.sm }}>
@@ -67,11 +76,21 @@ export default function GrupoScreen() {
           <Card accent="none">
             <AppText variant="subtitle">Hoy todavía no dejaste tu check-in.</AppText>
             <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
-              Cuando termines la lectura, aparece en Hoy. {friendName} ya dejó el suyo.
+              Cuando termines la lectura, aparece en Hoy.
             </AppText>
           </Card>
         )}
-        <CheckInCard checkIn={friendCheckInToday} member={specialFriend} kicker={`${friendName} hoy`} />
+        {friendCheckInToday ? (
+          <CheckInCard checkIn={friendCheckInToday} member={specialFriend} kicker={`${friendName} hoy`} />
+        ) : (
+          <Card accent="none">
+            <AppText variant="subtitle">
+              {specialFriend.id === 'pending'
+                ? 'Todavía no se unió nadie.'
+                : `${friendName} todavía no dejó el check-in de hoy.`}
+            </AppText>
+          </Card>
+        )}
       </View>
       <View style={{ height: space.lg }} />
       <StreakMark
@@ -113,6 +132,7 @@ export default function GrupoScreen() {
         requests={prayerRequests}
         members={members}
         friendName={friendName}
+        selfId={selfId}
         justPrayedId={justPrayedId}
         onPray={(id) => {
           markPrayed(id);
@@ -164,13 +184,15 @@ export default function GrupoScreen() {
       <AppText variant="ui" tone="soft" style={{ marginTop: 4, marginBottom: space.sm }}>
         No es el hilo de la mesa. Es el mural de las dos: un versículo y por qué se quedó.
       </AppText>
-      <HeartMural verses={heartVerses} members={members} />
+      <HeartMural verses={heartVerses} members={members} selfId={selfId} />
       <View style={{ height: space.xl }} />
       <AppText variant="label" tone="soft">
-        El resto de la mesa
+        Invitación
       </AppText>
       <AppText variant="caption" tone="soft" style={{ marginTop: 6, marginBottom: space.sm }}>
-        Código y los demás de {state.group.name}. El dúo sigue arriba.
+        {live
+          ? 'Compartí el código para que se una la otra. El dúo admite dos personas.'
+          : `Código y los demás de ${state.group.name}. El dúo sigue arriba.`}
       </AppText>
       <Card accent="none">
         <View
@@ -198,17 +220,25 @@ export default function GrupoScreen() {
         </View>
       </Card>
       <View style={{ marginTop: 4 }}>
-        {rest.map((member) => (
           <MemberRow
-            key={member.id}
-            member={member}
-            completed={groupToday.completedIds.includes(member.id)}
+            member={self}
+            completed={groupToday.completedIds.includes(selfId)}
           />
-        ))}
-        <MemberRow
-          member={self}
-          completed={groupToday.completedIds.includes(CURRENT_USER_ID)}
-        />
+        {specialFriend.id !== 'pending' ? (
+          <MemberRow
+            member={specialFriend}
+            completed={groupToday.completedIds.includes(specialFriend.id)}
+          />
+        ) : null}
+        {!live
+          ? rest.map((member) => (
+              <MemberRow
+                key={member.id}
+                member={member}
+                completed={groupToday.completedIds.includes(member.id)}
+              />
+            ))
+          : null}
       </View>
     </Screen>
   );

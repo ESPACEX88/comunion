@@ -6,6 +6,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { partnerFirstName } from '@/features/duo/labels';
 import { isDuoPlan, isPlanFinished } from '@/features/plans/content';
 import type { MoodId } from '@/lib/types';
 import { colors, radius, space } from '@/theme';
@@ -41,10 +42,11 @@ export default function LecturaScreen() {
   const startDate =
     kind === 'personal' ? (state.personalPlanStartDate ?? state.groupPlanStartDate) : state.groupPlanStartDate;
   const finished = isPlanFinished(plan, startDate, today);
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
 
   const [sheet, setSheet] = useState<'celebrate' | 'quiet' | null>(null);
   const [result, setResult] = useState({ personalStreak: 0, groupStreak: 0, groupJustUnlocked: false });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     openReading();
@@ -53,19 +55,19 @@ export default function LecturaScreen() {
   const alreadyDone = todayStatus === 'completado';
   const showDuo = kind === 'group' && Boolean(day.prompt);
 
-  const persistSheet = (payload: {
+  const persistSheet = async (payload: {
     mood: MoodId;
     note: string;
     heartNote: string;
     duoAnswer: string;
   }) => {
-    saveCheckIn(payload.mood, payload.note);
+    await saveCheckIn(payload.mood, payload.note);
     const wantsMural = Boolean(payload.heartNote.trim());
     if (wantsMural) {
-      saveHeartVerse(day.featured.reference, day.featured.text, payload.heartNote);
+      await saveHeartVerse(day.featured.reference, day.featured.text, payload.heartNote);
     }
     if (payload.duoAnswer.trim()) {
-      saveDuoAnswer(payload.duoAnswer);
+      await saveDuoAnswer(payload.duoAnswer);
     }
     setSheet(null);
     if (wantsMural) {
@@ -122,16 +124,22 @@ export default function LecturaScreen() {
         </AppText>
       </View>
       <Button
-        label={alreadyDone ? 'Hoy ya está completo' : 'Marcá el día como leído'}
-        disabled={alreadyDone}
+        label={alreadyDone ? 'Hoy ya está completo' : saving ? 'Guardando…' : 'Marcá el día como leído'}
+        disabled={alreadyDone || saving}
         onPress={async () => {
-          const next = completeToday();
-          setResult(next);
-          setSheet('celebrate');
+          if (saving || alreadyDone) return;
+          setSaving(true);
           try {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch {
-            /* web u otros entornos sin haptics */
+            const next = await completeToday();
+            setResult(next);
+            setSheet('celebrate');
+            try {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+              /* web u otros entornos sin haptics */
+            }
+          } finally {
+            setSaving(false);
           }
         }}
       />

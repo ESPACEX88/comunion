@@ -24,6 +24,7 @@ export default function PlanesScreen() {
     clearPersonalPlan,
     switchGroupPlan,
     openReading,
+    live,
   } = useAppState();
 
   const otherGroupPlan = ALL_PLANS.find((plan) => plan.id !== groupPlan.id);
@@ -79,7 +80,7 @@ export default function PlanesScreen() {
             router.push({ pathname: '/lectura', params: { plan: 'group' } });
           }}
         />
-        {otherGroupPlan ? (
+        {otherGroupPlan && !live ? (
           <Button
             label={`Cambiar al plan «${otherGroupPlan.title}»`}
             variant="ghost"
