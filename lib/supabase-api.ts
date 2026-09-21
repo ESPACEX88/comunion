@@ -2,6 +2,7 @@ import { PSALMS_PLAN } from '@/features/plans/content';
 import { todayKey } from '@/lib/date';
 import { getSupabase } from '@/lib/supabase';
 import { asMood } from '@/features/duo/moods';
+import type { ReminderPrefs } from '@/lib/reminders';
 import type { JournalEntry, MoodId } from '@/lib/types';
 
 export type RemoteMember = {
@@ -530,3 +531,70 @@ export async function insertJournalEntry(input: {
     createdAt: data.created_at,
   };
 }
+
+function rowToPrefs(row: {
+  solo_enabled: boolean;
+  solo_hour: number;
+  solo_minute: number;
+  duo_enabled: boolean;
+  duo_hour: number;
+  duo_minute: number;
+  expo_push_token: string | null;
+}): ReminderPrefs {
+  return {
+    soloEnabled: row.solo_enabled,
+    soloHour: row.solo_hour,
+    soloMinute: row.solo_minute,
+    duoEnabled: row.duo_enabled,
+    duoHour: row.duo_hour,
+    duoMinute: row.duo_minute,
+    expoPushToken: row.expo_push_token,
+  };
+}
+
+export async function ensureReminderPrefs(userId: string): Promise<ReminderPrefs> {
+  const supabase = getSupabase();
+  const { data: existing, error: readError } = await supabase
+    .from('reminder_prefs')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (existing) return rowToPrefs(existing);
+
+  const { data: created, error: insertError } = await supabase
+    .from('reminder_prefs')
+    .insert({ user_id: userId })
+    .select('*')
+    .single();
+  if (insertError || !created) {
+    const { data: raced } = await supabase
+      .from('reminder_prefs')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (raced) return rowToPrefs(raced);
+    throw new Error(explain(insertError, 'No se pudieron abrir los recordatorios.'));
+  }
+  return rowToPrefs(created);
+}
+
+export async function saveReminderPrefs(userId: string, prefs: ReminderPrefs): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from('reminder_prefs').upsert(
+    {
+      user_id: userId,
+      solo_enabled: prefs.soloEnabled,
+      solo_hour: prefs.soloHour,
+      solo_minute: prefs.soloMinute,
+      duo_enabled: prefs.duoEnabled,
+      duo_hour: prefs.duoHour,
+      duo_minute: prefs.duoMinute,
+      expo_push_token: prefs.expoPushToken,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' },
+  );
+  if (error) throw new Error(error.message);
+}
+

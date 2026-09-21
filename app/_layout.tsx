@@ -1,5 +1,6 @@
 import { AppStateProvider } from '@/features/app-state/AppStateProvider';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { ReminderProvider } from '@/features/reminders/ReminderProvider';
 import { ThemeProvider, useTheme } from '@/theme';
 import {
   Fraunces_400Regular,
@@ -81,20 +82,23 @@ function ThemedRoot() {
     <NavTheme value={navTheme}>
       <AuthProvider>
         <AppStateProvider>
-          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.cream },
-              animation: 'fade',
-            }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="lectura" />
-            <Stack.Screen name="nosotros" />
-            <Stack.Screen name="diario" />
-          </Stack>
+          <ReminderProvider>
+            <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.cream },
+                animation: 'fade',
+              }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="lectura" />
+              <Stack.Screen name="nosotros" />
+              <Stack.Screen name="diario" />
+              <Stack.Screen name="recordatorios" />
+            </Stack>
+          </ReminderProvider>
         </AppStateProvider>
       </AuthProvider>
     </NavTheme>

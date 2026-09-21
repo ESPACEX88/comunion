@@ -7,6 +7,8 @@ import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useReminders } from '@/features/reminders/ReminderProvider';
+import { formatClock } from '@/lib/reminders';
 import { lastNDays, parseDayKey } from '@/lib/date';
 import { space, useTheme, type AppearancePref } from '@/theme';
 import { router } from 'expo-router';
@@ -34,6 +36,7 @@ export default function YoScreen() {
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
   const { signOut, user } = useAuth();
+  const { prefs, cancelAll } = useReminders();
   const { colors, preference, setPreference } = useTheme();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
@@ -89,6 +92,22 @@ export default function YoScreen() {
               : `${soloStreak} ${soloStreak === 1 ? 'día seguido' : 'días seguidos'}.`
           }
           onPress={() => router.push('/(tabs)/planes')}
+        />
+        <HubEntry
+          kicker="Recordatorios"
+          title={
+            prefs.soloEnabled
+              ? `Tu momento · ${formatClock(prefs.soloHour, prefs.soloMinute)}`
+              : 'Tu momento está apagado'
+          }
+          hint={
+            hasDuo
+              ? prefs.duoEnabled
+                ? `Juntos a las ${formatClock(prefs.duoHour, prefs.duoMinute)}. Se puede apagar.`
+                : 'Juntos está apagado. El aviso de a dos se enciende acá.'
+              : 'Avisos en este teléfono. Juntos aparece cuando haya dúo.'
+          }
+          onPress={() => router.push('/recordatorios')}
         />
         {!hasDuo ? (
           <HubEntry
@@ -165,6 +184,7 @@ export default function YoScreen() {
         <Button
           label="Cerrar sesión"
           onPress={async () => {
+            await cancelAll();
             await signOut();
             await resetLocalData();
             router.replace('/onboarding');
@@ -183,6 +203,7 @@ export default function YoScreen() {
         style={{ marginTop: space.md }}
         onPress={() => {
           const wipe = async () => {
+            await cancelAll();
             await resetLocalData();
             router.replace('/onboarding');
           };
