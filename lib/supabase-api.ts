@@ -70,18 +70,40 @@ function explain(error: { message: string } | null, fallback: string) {
   return error?.message ?? fallback;
 }
 
+async function currentUserId() {
+  const { data, error } = await getSupabase().auth.getUser();
+  if (error || !data.user) throw new Error('No hay sesión.');
+  return data.user.id;
+}
+
+async function recoverExistingDuo() {
+  const userId = await currentUserId();
+  const bundle = await loadDuoBundle(userId);
+  if (!bundle) return null;
+  await ensurePsalmsPlan(bundle.duo.id);
+  return bundle.duo;
+}
+
 export async function createDuo(name: string) {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc('create_duo', { p_name: name });
-  if (error || !data) throw new Error(explain(error, 'No se pudo crear el dúo.'));
+  if (error || !data) {
+    const existing = await recoverExistingDuo();
+    if (existing) return existing;
+    throw new Error(explain(error, 'No se pudo crear el dúo.'));
+  }
   await ensurePsalmsPlan(data.id);
   return data;
 }
 
 export async function joinDuo(code: string) {
   const supabase = getSupabase();
-  const { data, error } = await supabase.rpc('join_duo', { p_code: code });
-  if (error || !data) throw new Error(explain(error, 'No se pudo unir al dúo.'));
+  const { data, error } = await supabase.rpc('join_duo', { p_code: code.trim().toUpperCase() });
+  if (error || !data) {
+    const existing = await recoverExistingDuo();
+    if (existing) return existing;
+    throw new Error(explain(error, 'No se pudo unir al dúo.'));
+  }
   await ensurePsalmsPlan(data.id);
   return data;
 }
@@ -110,7 +132,17 @@ export async function ensurePsalmsPlan(duoId: string): Promise<string> {
     })
     .select('id')
     .single();
-  if (planError || !plan) throw new Error(explain(planError, 'No se pudo crear el plan.'));
+  if (planError || !plan) {
+    const { data: raced } = await supabase
+      .from('plans')
+      .select('id')
+      .eq('duo_id', duoId)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+    if (raced) return raced.id;
+    throw new Error(explain(planError, 'No se pudo crear el plan.'));
+  }
 
   const { error: daysError } = await supabase.from('plan_days').insert(
     PSALMS_PLAN.days.map((day) => ({
@@ -139,7 +171,7 @@ export async function loadDuoBundle(userId: string): Promise<DuoBundle | null> {
   const [duoRes, membersRes, planRes, checkInsRes, prayersRes, heartRes] = await Promise.all([
     supabase.from('duos').select('*').eq('id', duoId).single(),
     supabase.from('duo_members').select('user_id, role').eq('duo_id', duoId),
-    supabase.from('plans').select('*').eq('duo_id', duoId).eq('is_active', true).maybeSingle(),
+    supabase.from('plans').select('*').eq('duo_id', duoId).eq('is_active', true).order('created_at').limit(1).maybeSingle(),
     supabase.from('check_ins').select('*').eq('duo_id', duoId).order('checked_on', { ascending: false }),
     supabase.from('prayers').select('*').eq('duo_id', duoId).order('created_at', { ascending: false }),
     supabase.from('heart_verses').select('*').eq('duo_id', duoId).order('created_at', { ascending: false }),

@@ -8,6 +8,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { partnerFirstName } from '@/features/duo/labels';
 import { lastNDays, parseDayKey } from '@/lib/date';
 import { colors, space } from '@/theme';
 import { router } from 'expo-router';
@@ -31,7 +32,7 @@ export default function YoScreen() {
   const { signOut, user } = useAuth();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
 
   return (
     <Screen>

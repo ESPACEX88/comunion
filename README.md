@@ -85,6 +85,14 @@ El esquema ya está en el proyecto `zpjrfxbrfdapoufdvrqr` (sa-east-1). La app no
 - AsyncStorage queda como caché (`version: 4`). Con sesión, Supabase es la fuente de verdad.
 - Sin cuenta, el mock de las fases 1–2 sigue disponible («Seguir sin cuenta»).
 
+Si al crear el dúo aparece `permission denied for function is_duo_member`, en el SQL Editor del proyecto:
+
+```sql
+grant execute on function public.is_duo_member(uuid) to authenticated;
+```
+
+La app, al entrar al dúo, siembra «Salmos de a dos» si todavía no hay plan activo (también lo reintenta al refrescar).
+
 **Cómo probar entre dos personas**
 
 1. José se registra (email + contraseña + nombre) → Crear dúo → copia el código.

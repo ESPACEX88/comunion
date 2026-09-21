@@ -28,6 +28,7 @@ import {
 } from '@/lib/streaks';
 import {
   createDuo,
+  ensurePsalmsPlan,
   insertHeartVerse,
   insertPrayer,
   joinDuo,
@@ -103,6 +104,17 @@ function emptyState(): PersistedState {
   };
 }
 
+let liveWriteChain: Promise<void> = Promise.resolve();
+
+function enqueueLiveWrite(task: () => Promise<void>): Promise<void> {
+  const run = liveWriteChain.then(task, task);
+  liveWriteChain = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 type AppContextValue = {
   hydrated: boolean;
   live: boolean;
@@ -126,20 +138,20 @@ type AppContextValue = {
   grace: GraceOffer;
   myDuoAnswerToday: DuoAnswer | null;
   friendDuoAnswerToday: DuoAnswer | null;
-  saveDuoAnswer: (text: string) => void;
+  saveDuoAnswer: (text: string) => Promise<void>;
   useGraceDay: () => void;
   simulateMissedDay: () => void;
   completeOnboarding: () => Promise<void>;
   openReading: () => void;
-  completeToday: () => {
+  completeToday: () => Promise<{
     personalStreak: number;
     groupStreak: number;
     groupJustUnlocked: boolean;
-  };
-  shareVerse: (reference: string, text: string, note?: string) => void;
+  }>;
+  shareVerse: (reference: string, text: string, note?: string) => Promise<void>;
   postNote: (text: string) => void;
-  saveCheckIn: (mood: MoodId, note: string) => void;
-  saveHeartVerse: (reference: string, text: string, note: string) => void;
+  saveCheckIn: (mood: MoodId, note: string) => Promise<void>;
+  saveHeartVerse: (reference: string, text: string, note: string) => Promise<void>;
   addPrayerRequest: (text: string) => void;
   markPrayed: (requestId: string) => void;
   specialFriend: Member;
@@ -200,10 +212,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     void dataSource.save(state);
   }, [hydrated, state]);
 
-  const refreshLive = useCallback(async () => {
+  const refreshLiveNow = useCallback(async () => {
     if (!user) return;
     try {
-      const bundle = await loadDuoBundle(user.id);
+      let bundle = await loadDuoBundle(user.id);
       if (!bundle) {
         setLiveBundleCompletions(null);
         setLivePlan(null);
@@ -219,6 +231,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           notificationsEnabled: prev.notificationsEnabled,
         }));
         return;
+      }
+      if (!bundle.plan) {
+        await ensurePsalmsPlan(bundle.duo.id);
+        bundle = (await loadDuoBundle(user.id)) ?? bundle;
       }
       const next = bundleToState(emptyState(), bundle, user.id);
       setLiveBundleCompletions(liveCompletions(bundle));
@@ -245,6 +261,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setSyncError(error instanceof Error ? error.message : 'No se pudo hablar con el servidor.');
     }
   }, [user]);
+
+  const refreshLive = useCallback(() => enqueueLiveWrite(() => refreshLiveNow()), [refreshLiveNow]);
 
   useEffect(() => {
     if (!user) {
@@ -349,7 +367,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           await createDuo(draft.groupName.trim() || name);
         }
         await updateDisplayName(user.id, name).catch(() => undefined);
-        await refreshLive();
+        await refreshLiveNow();
         setSyncError(null);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'No se pudo guardar el dúo.';
@@ -389,7 +407,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
     setState(next);
     await dataSource.save(next);
-  }, [draft, refreshLive, user]);
+  }, [draft, refreshLiveNow, user]);
 
   const openReading = useCallback(() => {
     setState((prev) => {
@@ -398,7 +416,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
   }, [today]);
 
-  const completeToday = useCallback(() => {
+  const completeToday = useCallback(async () => {
     const dates = withDate(state.userCompletedDates, today);
     const nextCompletions = live
       ? { ...(liveBundleCompletions ?? {}), [selfId]: dates }
@@ -420,18 +438,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       groupBest: Math.max(prev.groupBest, nextGroup),
     }));
 
-    if (user && state.remotePlanId) {
-      void upsertCompletion({
-        planId: state.remotePlanId,
-        userId: user.id,
-        dayNumber: todayGroupReading.dayNumber,
-        completedOn: today,
-        usedGrace: false,
-      })
-        .then(() => refreshLive())
-        .catch((error: unknown) => {
+    if (user && state.remoteDuoId) {
+      const duoId = state.remoteDuoId;
+      const dayNumber = todayGroupReading.dayNumber;
+      await enqueueLiveWrite(async () => {
+        try {
+          const planId = state.remotePlanId ?? (await ensurePsalmsPlan(duoId));
+          await upsertCompletion({
+            planId,
+            userId: user.id,
+            dayNumber,
+            completedOn: today,
+            usedGrace: false,
+          });
+          await refreshLiveNow();
+        } catch (error: unknown) {
           setSyncError(error instanceof Error ? error.message : 'No se pudo guardar el día.');
-        });
+        }
+      });
     }
 
     return result;
@@ -440,9 +464,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     live,
     liveBundleCompletions,
     memberIds,
-    refreshLive,
+    refreshLiveNow,
     selfId,
     state.graceDates,
+    state.remoteDuoId,
     state.remotePlanId,
     state.userCompletedDates,
     today,
@@ -478,20 +503,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ],
       }));
       if (user && state.remoteDuoId) {
-        void insertHeartVerse({
-          duoId: state.remoteDuoId,
-          authorId: user.id,
-          reference,
-          text,
-          note: trimmedNote.slice(0, HEART_NOTE_MAX),
-        })
-          .then(() => refreshLive())
-          .catch((error: unknown) => {
+        const duoId = state.remoteDuoId;
+        const clippedNote = trimmedNote.slice(0, HEART_NOTE_MAX);
+        return enqueueLiveWrite(async () => {
+          try {
+            await insertHeartVerse({
+              duoId,
+              authorId: user.id,
+              reference,
+              text,
+              note: clippedNote,
+            });
+            await refreshLiveNow();
+          } catch (error: unknown) {
             setSyncError(error instanceof Error ? error.message : 'No se pudo guardar el versículo.');
-          });
+          }
+        });
       }
+      return Promise.resolve();
     },
-    [refreshLive, selfId, state.remoteDuoId, user],
+    [refreshLiveNow, selfId, state.remoteDuoId, user],
   );
 
   const saveCheckIn = useCallback(
@@ -516,26 +547,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         };
       });
       if (user && state.remoteDuoId) {
-        void upsertCheckIn({
-          userId: user.id,
-          duoId: state.remoteDuoId,
-          mood,
-          note: clipped,
-          checkedOn: today,
-        })
-          .then(() => refreshLive())
-          .catch((error: unknown) => {
+        return enqueueLiveWrite(async () => {
+          try {
+            await upsertCheckIn({
+              userId: user.id,
+              duoId: state.remoteDuoId!,
+              mood,
+              note: clipped,
+              checkedOn: today,
+            });
+            await refreshLiveNow();
+          } catch (error: unknown) {
             setSyncError(error instanceof Error ? error.message : 'No se pudo guardar el check-in.');
-          });
+          }
+        });
       }
+      return Promise.resolve();
     },
-    [refreshLive, selfId, state.remoteDuoId, today, user],
+    [refreshLiveNow, selfId, state.remoteDuoId, today, user],
   );
 
   const saveHeartVerse = useCallback(
-    (reference: string, text: string, note: string) => {
-      shareVerse(reference, text, note);
-    },
+    (reference: string, text: string, note: string) => shareVerse(reference, text, note),
     [shareVerse],
   );
 
@@ -557,14 +590,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ],
       }));
       if (user && state.remoteDuoId) {
-        void insertPrayer({ duoId: state.remoteDuoId, authorId: user.id, body: clipped })
-          .then(() => refreshLive())
-          .catch((error: unknown) => {
+        void enqueueLiveWrite(async () => {
+          try {
+            await insertPrayer({ duoId: state.remoteDuoId!, authorId: user.id, body: clipped });
+            await refreshLiveNow();
+          } catch (error: unknown) {
             setSyncError(error instanceof Error ? error.message : 'No se pudo dejar el pedido.');
-          });
+          }
+        });
       }
     },
-    [refreshLive, selfId, state.remoteDuoId, user],
+    [refreshLiveNow, selfId, state.remoteDuoId, user],
   );
 
   const markPrayed = useCallback(
@@ -578,20 +614,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ),
       }));
       if (user && state.remoteDuoId) {
-        void markPrayerAnswered(requestId)
-          .then(() => refreshLive())
-          .catch((error: unknown) => {
+        void enqueueLiveWrite(async () => {
+          try {
+            await markPrayerAnswered(requestId);
+            await refreshLiveNow();
+          } catch (error: unknown) {
             setSyncError(error instanceof Error ? error.message : 'No se pudo marcar la oración.');
-          });
+          }
+        });
       }
     },
-    [refreshLive, selfId, state.remoteDuoId, user],
+    [refreshLiveNow, selfId, state.remoteDuoId, user],
   );
 
   const saveDuoAnswer = useCallback(
     (text: string) => {
       const clipped = text.trim().slice(0, DUO_ANSWER_MAX);
-      if (!clipped || !todayGroupReading.prompt) return;
+      if (!clipped || !todayGroupReading.prompt) return Promise.resolve();
       setState((prev) => {
         const withoutMine = prev.duoAnswers.filter(
           (item) => !(item.authorId === selfId && item.planDayId === todayGroupReading.id),
@@ -611,22 +650,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           ],
         };
       });
-      if (user && state.remotePlanId) {
-        void upsertPlanAnswer({
-          planId: state.remotePlanId,
-          userId: user.id,
-          dayNumber: todayGroupReading.dayNumber,
-          answer: clipped,
-        })
-          .then(() => refreshLive())
-          .catch((error: unknown) => {
+      if (user && state.remoteDuoId) {
+        return enqueueLiveWrite(async () => {
+          try {
+            const planId = state.remotePlanId ?? (await ensurePsalmsPlan(state.remoteDuoId!));
+            await upsertPlanAnswer({
+              planId,
+              userId: user.id,
+              dayNumber: todayGroupReading.dayNumber,
+              answer: clipped,
+            });
+            await refreshLiveNow();
+          } catch (error: unknown) {
             setSyncError(error instanceof Error ? error.message : 'No se pudo guardar la respuesta.');
-          });
+          }
+        });
       }
+      return Promise.resolve();
     },
     [
-      refreshLive,
+      refreshLiveNow,
       selfId,
+      state.remoteDuoId,
       state.remotePlanId,
       today,
       todayGroupReading.dayNumber,
@@ -642,21 +687,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (prev.graceDates.includes(gap)) return prev;
       return { ...prev, graceDates: [...prev.graceDates, gap] };
     });
-    if (user && state.remotePlanId) {
+    if (user && state.remoteDuoId) {
       const gapDay = planDayForDate(groupPlan, state.groupPlanStartDate, gap);
-      void upsertCompletion({
-        planId: state.remotePlanId,
-        userId: user.id,
-        dayNumber: gapDay.dayNumber,
-        completedOn: gap,
-        usedGrace: true,
-      })
-        .then(() => refreshLive())
-        .catch((error: unknown) => {
+      void enqueueLiveWrite(async () => {
+        try {
+          const planId = state.remotePlanId ?? (await ensurePsalmsPlan(state.remoteDuoId!));
+          await upsertCompletion({
+            planId,
+            userId: user.id,
+            dayNumber: gapDay.dayNumber,
+            completedOn: gap,
+            usedGrace: true,
+          });
+          await refreshLiveNow();
+        } catch (error: unknown) {
           setSyncError(error instanceof Error ? error.message : 'No se pudo guardar la gracia.');
-        });
+        }
+      });
     }
-  }, [groupPlan, refreshLive, state.groupPlanStartDate, state.remotePlanId, today, user]);
+  }, [groupPlan, refreshLiveNow, state.groupPlanStartDate, state.remoteDuoId, state.remotePlanId, today, user]);
 
   const simulateMissedDay = useCallback(() => {
     const y = yesterday(today);

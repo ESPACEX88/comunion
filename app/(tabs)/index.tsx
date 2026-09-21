@@ -10,6 +10,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { partnerFirstName } from '@/features/duo/labels';
 import { isDuoPlan } from '@/features/plans/content';
 import { formatLongDate, greeting, yesterday } from '@/lib/date';
 import { colors, space } from '@/theme';
@@ -43,7 +44,7 @@ export default function HoyScreen() {
   } = useAppState();
 
   const self = members.find((member) => member.isSelf) ?? members[0];
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
   const duo = isDuoPlan(groupPlan);
   const usedGraceYesterday = state.graceDates.includes(yesterday(today));
   const cta =

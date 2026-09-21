@@ -12,6 +12,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { PRAYER_MAX } from '@/features/duo/moods';
+import { partnerFirstName } from '@/features/duo/labels';
 import { colors, radius, space } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
@@ -45,7 +46,7 @@ export default function GrupoScreen() {
   const [prayer, setPrayer] = useState('');
   const [justPrayedId, setJustPrayedId] = useState<string | null>(null);
   const self = members.find((member) => member.isSelf) ?? members[0];
-  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
+  const friendName = partnerFirstName(specialFriend);
   const rest = members.filter((member) => !member.isSelf && !member.isSpecialFriend);
 
   return (
