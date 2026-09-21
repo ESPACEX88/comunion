@@ -11,14 +11,15 @@ type Props = {
   plan: Plan;
   day: PlanDay;
   cta: string;
+  kicker?: string;
   onPress: () => void;
 };
 
-export function ReadingCard({ plan, day, cta, onPress }: Props) {
+export function ReadingCard({ plan, day, cta, kicker, onPress }: Props) {
   return (
     <Card>
       <AppText variant="label" tone="amber">
-        {isDuoPlan(plan) ? 'Plan de a dos' : 'Lectura de hoy'} · {plan.title}
+        {kicker ?? (isDuoPlan(plan) ? 'Plan de a dos' : 'Lectura de hoy')} · {plan.title}
       </AppText>
       <View style={{ height: space.sm }} />
       <AppText variant="title">{day.title}</AppText>

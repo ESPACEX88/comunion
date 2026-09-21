@@ -6,7 +6,20 @@ export const STORAGE_KEY = '@comunion/v1/state';
 
 type LooseState = Omit<
   PersistedState,
-  'version' | 'checkIns' | 'prayerRequests' | 'heartVerses' | 'duoAnswers' | 'graceDates' | 'userId' | 'remoteDuoId' | 'remotePlanId'
+  | 'version'
+  | 'checkIns'
+  | 'prayerRequests'
+  | 'heartVerses'
+  | 'duoAnswers'
+  | 'graceDates'
+  | 'userId'
+  | 'remoteDuoId'
+  | 'remotePlanId'
+  | 'remotePersonalPlanId'
+  | 'duoEnabled'
+  | 'personalCompletedDates'
+  | 'personalInProgressDate'
+  | 'journalEntries'
 > & {
   version?: number;
   checkIns?: PersistedState['checkIns'];
@@ -17,6 +30,11 @@ type LooseState = Omit<
   userId?: string | null;
   remoteDuoId?: string | null;
   remotePlanId?: string | null;
+  remotePersonalPlanId?: string | null;
+  duoEnabled?: boolean;
+  personalCompletedDates?: string[];
+  personalInProgressDate?: string | null;
+  journalEntries?: PersistedState['journalEntries'];
 };
 
 /**
@@ -29,7 +47,12 @@ export function migrateState(raw: LooseState): PersistedState {
   const heartVerses = raw.heartVerses ?? [];
   const duoAnswers = raw.duoAnswers ?? [];
   const graceDates = raw.graceDates ?? [];
+  const duoEnabled =
+    raw.duoEnabled ??
+    (Boolean(raw.remoteDuoId) ||
+      (Boolean(raw.onboardingComplete) && prayerRequests.length > 0 && !raw.remoteDuoId));
   const shouldSeedDuo =
+    duoEnabled &&
     Boolean(raw.onboardingComplete) &&
     !raw.remoteDuoId &&
     prayerRequests.length === 0 &&
@@ -38,9 +61,14 @@ export function migrateState(raw: LooseState): PersistedState {
   return {
     ...raw,
     version: 4,
+    duoEnabled,
     userId: raw.userId ?? null,
     remoteDuoId: raw.remoteDuoId ?? null,
     remotePlanId: raw.remotePlanId ?? null,
+    remotePersonalPlanId: raw.remotePersonalPlanId ?? null,
+    personalCompletedDates: raw.personalCompletedDates ?? [],
+    personalInProgressDate: raw.personalInProgressDate ?? null,
+    journalEntries: raw.journalEntries ?? [],
     checkIns,
     prayerRequests: shouldSeedDuo ? seedPrayerRequests() : prayerRequests,
     heartVerses: shouldSeedDuo ? seedHeartVerses() : heartVerses,

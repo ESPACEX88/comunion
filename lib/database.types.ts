@@ -186,6 +186,100 @@ export type Database = {
         Update: { is_answered?: boolean; body?: string };
         Relationships: [];
       };
+      journal_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          entry_on: string;
+          title: string | null;
+          body: string;
+          mood: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          entry_on?: string;
+          title?: string | null;
+          body: string;
+          mood?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          entry_on?: string;
+          title?: string | null;
+          body?: string;
+          mood?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      personal_plans: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          days: number;
+          starts_on: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          description?: string | null;
+          days: number;
+          starts_on?: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: { title?: string; is_active?: boolean };
+        Relationships: [];
+      };
+      personal_plan_days: {
+        Row: {
+          id: string;
+          plan_id: string;
+          day_number: number;
+          scripture_ref: string;
+          prompt: string | null;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          day_number: number;
+          scripture_ref: string;
+          prompt?: string | null;
+        };
+        Update: { scripture_ref?: string; prompt?: string | null };
+        Relationships: [];
+      };
+      personal_completions: {
+        Row: {
+          id: string;
+          plan_id: string;
+          user_id: string;
+          day_number: number;
+          completed_on: string;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          user_id: string;
+          day_number: number;
+          completed_on?: string;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: { completed_on?: string; note?: string | null };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -216,6 +310,10 @@ export type Database = {
         Returns: Database['public']['Tables']['duos']['Row'];
       };
       is_duo_member: { Args: { p_duo_id: string }; Returns: boolean };
+      ensure_personal_salmos_plan: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['personal_plans']['Row'];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

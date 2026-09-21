@@ -2,11 +2,13 @@ import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
 import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 import { Ornament } from '@/components/ui/Ornament';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { partnerFirstName } from '@/features/duo/labels';
+import { PERSONAL_NOTE_MAX } from '@/features/duo/moods';
 import { isDuoPlan, isPlanFinished } from '@/features/plans/content';
 import type { MoodId } from '@/lib/types';
 import { radius, space, useTheme } from '@/theme';
@@ -22,19 +24,24 @@ export default function LecturaScreen() {
     state,
     today,
     todayStatus,
+    personalTodayStatus,
     groupPlan,
     personalPlan,
     todayGroupReading,
     todayPersonalReading,
     completeToday,
+    completePersonalToday,
     saveCheckIn,
     saveHeartVerse,
     saveDuoAnswer,
     openReading,
+    openPersonalReading,
     myCheckInToday,
     myDuoAnswerToday,
     friendDuoAnswerToday,
     specialFriend,
+    hasDuo,
+    soloStreak,
   } = useAppState();
 
   const plan = kind === 'personal' ? personalPlan ?? groupPlan : groupPlan;
@@ -46,15 +53,17 @@ export default function LecturaScreen() {
 
   const [sheet, setSheet] = useState<'celebrate' | 'quiet' | null>(null);
   const [result, setResult] = useState({ personalStreak: 0, groupStreak: 0, groupJustUnlocked: false });
+  const [dayNote, setDayNote] = useState('');
   const [saving, setSaving] = useState(false);
   const { colors } = useTheme();
 
   useEffect(() => {
-    openReading();
-  }, [openReading]);
+    if (kind === 'personal') openPersonalReading();
+    else openReading();
+  }, [kind, openPersonalReading, openReading]);
 
-  const alreadyDone = todayStatus === 'completado';
-  const showDuo = kind === 'group' && Boolean(day.prompt);
+  const alreadyDone = kind === 'personal' ? personalTodayStatus === 'completado' : todayStatus === 'completado';
+  const showDuo = kind === 'group' && hasDuo && Boolean(day.prompt);
 
   const persistSheet = async (payload: {
     mood: MoodId;
@@ -63,11 +72,11 @@ export default function LecturaScreen() {
     duoAnswer: string;
   }) => {
     await saveCheckIn(payload.mood, payload.note);
-    const wantsMural = Boolean(payload.heartNote.trim());
+    const wantsMural = hasDuo && Boolean(payload.heartNote.trim());
     if (wantsMural) {
       await saveHeartVerse(day.featured.reference, day.featured.text, payload.heartNote);
     }
-    if (payload.duoAnswer.trim()) {
+    if (showDuo && payload.duoAnswer.trim()) {
       await saveDuoAnswer(payload.duoAnswer);
     }
     setSheet(null);
@@ -86,7 +95,7 @@ export default function LecturaScreen() {
         </AppText>
       </Pressable>
       <AppText variant="caption" tone="soft" style={{ marginTop: space.md }}>
-        {isDuoPlan(plan) ? 'Plan de a dos · ' : ''}
+        {kind === 'personal' ? 'Plan personal · ' : isDuoPlan(plan) ? 'Plan de a dos · ' : ''}
         {plan.title}
       </AppText>
       <AppText variant="display" style={{ marginTop: 4 }}>
@@ -124,6 +133,20 @@ export default function LecturaScreen() {
           Leélo una vez más si hace falta. El día no se marca hasta que toqués completar.
         </AppText>
       </View>
+      {kind === 'personal' && !alreadyDone ? (
+        <View style={{ marginBottom: space.lg }}>
+          <AppText variant="label" tone="amber">
+            Nota corta, solo para vos
+          </AppText>
+          <Field
+            value={dayNote}
+            onChangeText={(value) => setDayNote(value.slice(0, PERSONAL_NOTE_MAX))}
+            placeholder="Opcional. Queda en tu plan, no en el dúo."
+            maxLength={PERSONAL_NOTE_MAX}
+            multiline
+          />
+        </View>
+      ) : null}
       <Button
         label={alreadyDone ? 'Hoy ya está completo' : saving ? 'Guardando…' : 'Marcá el día como leído'}
         disabled={alreadyDone || saving}
@@ -131,8 +154,13 @@ export default function LecturaScreen() {
           if (saving || alreadyDone) return;
           setSaving(true);
           try {
-            const next = await completeToday();
-            setResult(next);
+            if (kind === 'personal') {
+              const next = await completePersonalToday(dayNote);
+              setResult({ personalStreak: next.soloStreak, groupStreak: 0, groupJustUnlocked: false });
+            } else {
+              const next = await completeToday();
+              setResult(next);
+            }
             setSheet('celebrate');
             try {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -181,6 +209,7 @@ export default function LecturaScreen() {
         friendName={friendName}
         featured={day.featured}
         question={showDuo && day.prompt && !myDuoAnswerToday ? day.prompt : undefined}
+        hasDuo={hasDuo && kind === 'group'}
         onSave={persistSheet}
         onSkip={() => setSheet(null)}
       />

@@ -1,5 +1,5 @@
-import { GraceCard } from '@/components/duo/GraceCard';
 import { Avatar } from '@/components/group/MemberRow';
+import { HubEntry } from '@/components/group/HubEntry';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -7,11 +7,10 @@ import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { partnerFirstName } from '@/features/duo/labels';
 import { lastNDays, parseDayKey } from '@/lib/date';
 import { space, useTheme, type AppearancePref } from '@/theme';
 import { router } from 'expo-router';
-import { Alert, Platform, Pressable, Switch, View } from 'react-native';
+import { Alert, Platform, Pressable, View } from 'react-native';
 
 const THEME_OPTIONS: { id: AppearancePref; label: string }[] = [
   { id: 'light', label: 'Claro' },
@@ -24,34 +23,32 @@ export default function YoScreen() {
     state,
     today,
     members,
-    setNotifications,
     setUserName,
     resetLocalData,
-    grace,
-    useGraceDay,
-    simulateMissedDay,
-    specialFriend,
     live,
+    hasDuo,
+    signedIn,
+    soloStreak,
+    journalEntries,
+    personalPlan,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
   const { signOut, user } = useAuth();
   const { colors, preference, setPreference } = useTheme();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
-  const friendName = partnerFirstName(specialFriend);
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <AppText variant="label" tone="olive">
-        Vos
+        Tu espacio con Dios
       </AppText>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.lg }}>
         <Avatar name={state.userName} hue={self.hue} />
         <View style={{ flex: 1 }}>
-          <AppText variant="title">{state.userName}</AppText>
+          <AppText variant="title">{state.userName || 'Vos'}</AppText>
           <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-            {state.group.name}
-            {live ? ' · en la nube' : ''}
+            {hasDuo ? `${state.group.name}${live ? ' · en la nube' : ''}` : 'En solitario, por ahora'}
           </AppText>
           {user?.email ? (
             <AppText variant="caption" tone="soft" style={{ marginTop: 4 }}>
@@ -69,8 +66,39 @@ export default function YoScreen() {
         style={{ marginTop: space.lg }}
       />
       <AppText variant="caption" tone="soft" style={{ marginTop: 6 }}>
-        Así te ve tu dúo.
+        {hasDuo ? 'Así te ve tu dúo.' : 'Así te vas a ver cuando haya dúo.'}
       </AppText>
+
+      <View style={{ marginTop: space.xl }}>
+        <HubEntry
+          kicker="Diario"
+          title="Lo que no va al dúo"
+          hint={
+            journalEntries.length === 0
+              ? 'Todavía en blanco. Una fecha, un cuerpo, un ánimo si querés.'
+              : `${journalEntries.length} ${journalEntries.length === 1 ? 'entrada' : 'entradas'}. Solo tuyas.`
+          }
+          onPress={() => router.push('/diario')}
+        />
+        <HubEntry
+          kicker="Mi plan"
+          title={personalPlan?.title ?? 'Salmos en solitario'}
+          hint={
+            soloStreak === 0
+              ? 'Tu racha personal, aparte de la de a dos.'
+              : `${soloStreak} ${soloStreak === 1 ? 'día seguido' : 'días seguidos'}.`
+          }
+          onPress={() => router.push('/(tabs)/planes')}
+        />
+        {!hasDuo ? (
+          <HubEntry
+            kicker="Dúo"
+            title="Sumar a alguien"
+            hint="Cuando quieras. No es requisito para seguir leyendo."
+            onPress={() => router.push('/onboarding/grupo')}
+          />
+        ) : null}
+      </View>
 
       <AppText variant="label" tone="amber" style={{ marginTop: space.xl }}>
         Apariencia
@@ -103,12 +131,11 @@ export default function YoScreen() {
       </AppText>
 
       <AppText variant="label" tone="amber" style={{ marginTop: space.xl }}>
-        Últimas dos semanas
+        Tu racha personal
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: space.md }}>
         {history.map((day) => {
-          const done = state.userCompletedDates.includes(day);
-          const graceDay = state.graceDates.includes(day);
+          const done = state.personalCompletedDates.includes(day);
           const isToday = day === today;
           return (
             <View key={day} style={{ alignItems: 'center', width: 28 }}>
@@ -117,7 +144,7 @@ export default function YoScreen() {
                   width: 10,
                   height: 10,
                   borderRadius: 5,
-                  backgroundColor: done ? colors.olive : graceDay ? colors.amber : colors.line,
+                  backgroundColor: done ? colors.olive : colors.line,
                   borderWidth: isToday ? 2 : 0,
                   borderColor: colors.amber,
                 }}
@@ -130,33 +157,11 @@ export default function YoScreen() {
         })}
       </View>
 
-      <View style={{ marginTop: space.lg }}>
-        <GraceCard offer={grace} friendName={friendName} onUseGrace={useGraceDay} />
-      </View>
-
-      <View
-        style={{
-          marginTop: space.xl,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-        <View style={{ flex: 1, paddingRight: 12 }}>
-          <AppText variant="subtitle">Recordatorio diario</AppText>
-          <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-            Solo la interfaz, por ahora.
-          </AppText>
-        </View>
-        <Switch
-          value={state.notificationsEnabled}
-          onValueChange={setNotifications}
-          trackColor={{ false: colors.line, true: colors.oliveSoft }}
-          thumbColor={state.notificationsEnabled ? colors.olive : colors.creamDeep}
-        />
-      </View>
-
-      <View style={{ height: space.xl }} />
-      {live ? (
+      <AppText variant="label" tone="amber" style={{ marginTop: space.xl }}>
+        Cuenta
+      </AppText>
+      <View style={{ height: space.md }} />
+      {signedIn ? (
         <Button
           label="Cerrar sesión"
           onPress={async () => {
@@ -165,21 +170,17 @@ export default function YoScreen() {
             router.replace('/onboarding');
           }}
         />
-      ) : null}
+      ) : (
+        <Button label="Crear cuenta" onPress={() => router.push('/onboarding')} />
+      )}
 
       <AppText variant="label" tone="soft" style={{ marginTop: space.xxl }}>
         Este teléfono
       </AppText>
       <Button
-        label="Probar un día saltado"
-        variant="ghost"
-        style={{ marginTop: space.md }}
-        onPress={simulateMissedDay}
-      />
-      <Button
         label="Empezar de cero en este aparato"
         variant="ghost"
-        style={{ marginTop: 8 }}
+        style={{ marginTop: space.md }}
         onPress={() => {
           const wipe = async () => {
             await resetLocalData();

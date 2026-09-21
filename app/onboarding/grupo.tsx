@@ -11,7 +11,7 @@ import { Redirect, router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 export default function OnboardingGroup() {
-  const { draft, setDraft, state } = useAppState();
+  const { draft, setDraft, state, enterSolo } = useAppState();
   const { session } = useAuth();
 
   if (state.remoteDuoId) {
@@ -24,13 +24,13 @@ export default function OnboardingGroup() {
         Comunión · el dúo
       </AppText>
       <AppText variant="title" style={{ marginTop: space.md }}>
-        Nadie lee del todo solo.
+        El dúo se suma. No es requisito.
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
         {session
-          ? 'Una crea el dúo y comparte el código. La otra se une. El plan «Salmos de a dos» se siembra solo, con una pregunta cada tarde.'
-          : 'Sin cuenta, Ana queda de amiga mock en este teléfono. Con cuenta, el dúo es de verdad.'}
+          ? 'Si hay alguien con quien leer, creá el dúo o uníte. Si no, seguí en solitario. Tu diario y tu plan quedan solo para vos.'
+          : 'Podés entrar sola en este teléfono, o armar un dúo mock para ver cómo se siente de a dos.'}
       </AppText>
       <View style={{ height: space.lg }} />
       <View style={{ flexDirection: 'row', gap: space.sm }}>
@@ -77,6 +77,15 @@ export default function OnboardingGroup() {
       )}
       <View style={{ height: space.xl }} />
       <Button label="El plan de a dos" onPress={() => router.push('/onboarding/plan')} />
+      <Button
+        label="Seguir en solitario"
+        variant="ghost"
+        style={{ marginTop: 10 }}
+        onPress={async () => {
+          await enterSolo();
+          router.replace('/(tabs)');
+        }}
+      />
       <Button label="Atrás" variant="ghost" onPress={() => router.back()} style={{ marginTop: 10 }} />
     </Screen>
   );

@@ -6,11 +6,13 @@ import { useAppState } from '@/features/app-state/AppStateProvider';
 import { Field } from '@/components/ui/Field';
 import { radius, space, useTheme } from '@/theme';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 export default function OnboardingName() {
-  const { draft, setDraft } = useAppState();
+  const { draft, setDraft, enterSolo } = useAppState();
   const { colors } = useTheme();
+  const [busy, setBusy] = useState(false);
 
   return (
     <Screen>
@@ -22,8 +24,7 @@ export default function OnboardingName() {
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        Esto queda solo en el aparato: no hay cuenta ni sync. Para leer con alguien de verdad,
-        volvé y creá una cuenta.
+        Esto queda en este teléfono. Podés entrar ya a tu espacio, o más adelante sumar un dúo.
       </AppText>
       <View style={{ height: space.xl }} />
       <AppText variant="label" tone="amber">
@@ -38,9 +39,23 @@ export default function OnboardingName() {
       />
       <View style={{ height: space.xl }} />
       <Button
-        label="Seguir"
+        label={busy ? 'Un segundo…' : 'Seguir en solitario'}
+        onPress={async () => {
+          setBusy(true);
+          try {
+            await enterSolo();
+            router.replace('/(tabs)');
+          } finally {
+            setBusy(false);
+          }
+        }}
+        disabled={draft.name.trim().length < 2 || busy}
+      />
+      <Button
+        label="Prefiero un dúo"
+        variant="ghost"
         onPress={() => router.push('/onboarding/grupo')}
-        disabled={draft.name.trim().length < 2}
+        style={{ marginTop: 10 }}
       />
       <Button label="Atrás" variant="ghost" onPress={() => router.back()} style={{ marginTop: 10 }} />
       <View

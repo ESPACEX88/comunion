@@ -23,7 +23,7 @@ export default function OnboardingAccount() {
   const [info, setInfo] = useState<string | null>(null);
 
   if (session) {
-    return <Redirect href="/onboarding/grupo" />;
+    return <Redirect href="/" />;
   }
 
   const submit = async () => {
@@ -40,7 +40,7 @@ export default function OnboardingAccount() {
       return;
     }
     if (mode === 'crear' && draft.name.trim().length < 2) {
-      setError('Antes, tu nombre. Así te va a ver tu dúo.');
+      setError('Antes, tu nombre. Así te vas a ver en tu espacio.');
       return;
     }
     setBusy(true);
@@ -71,12 +71,11 @@ export default function OnboardingAccount() {
         Comunión
       </AppText>
       <AppText variant="display" style={{ marginTop: space.md }}>
-        {mode === 'crear' ? 'Una cuenta, para las dos.' : 'Volvé a la mesa.'}
+        {mode === 'crear' ? 'Tu espacio con Dios.' : 'Volvé a tu espacio.'}
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        El dúo vive en la nube, despacio. Misma mesa en los dos teléfonos. Sin service_role: solo la
-        clave anónima del proyecto.
+        Podés usarla sola. El dúo se suma después, si querés. Nada se mezcla: lo tuyo queda tuyo.
       </AppText>
       {!configured ? (
         <View
