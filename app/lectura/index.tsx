@@ -9,7 +9,7 @@ import { useAppState } from '@/features/app-state/AppStateProvider';
 import { partnerFirstName } from '@/features/duo/labels';
 import { isDuoPlan, isPlanFinished } from '@/features/plans/content';
 import type { MoodId } from '@/lib/types';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -47,6 +47,7 @@ export default function LecturaScreen() {
   const [sheet, setSheet] = useState<'celebrate' | 'quiet' | null>(null);
   const [result, setResult] = useState({ personalStreak: 0, groupStreak: 0, groupJustUnlocked: false });
   const [saving, setSaving] = useState(false);
+  const { colors } = useTheme();
 
   useEffect(() => {
     openReading();

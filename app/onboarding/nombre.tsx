@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
-import { colors, radius, space } from '@/theme';
+import { Field } from '@/components/ui/Field';
+import { radius, space, useTheme } from '@/theme';
 import { router } from 'expo-router';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function OnboardingName() {
   const { draft, setDraft } = useAppState();
+  const { colors } = useTheme();
 
   return (
     <Screen>
@@ -27,22 +29,12 @@ export default function OnboardingName() {
       <AppText variant="label" tone="amber">
         ¿Cómo te llamás?
       </AppText>
-      <TextInput
+      <Field
         value={draft.name}
         onChangeText={(name) => setDraft({ name })}
         placeholder="Tu nombre"
-        placeholderTextColor={colors.oliveSoft}
         autoFocus
         autoCapitalize="words"
-        style={{
-          marginTop: space.sm,
-          borderBottomWidth: 1.5,
-          borderBottomColor: colors.amber,
-          paddingVertical: 12,
-          fontFamily: 'Fraunces_600SemiBold',
-          fontSize: 28,
-          color: colors.ink,
-        }}
       />
       <View style={{ height: space.xl }} />
       <Button

@@ -1,5 +1,5 @@
 import { AppText } from '@/components/ui/AppText';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { View } from 'react-native';
 
 type Props = {
@@ -10,29 +10,31 @@ type Props = {
 };
 
 export function StreakMark({ count, label, hint, compact }: Props) {
+  const { colors } = useTheme();
+  const size = compact ? 56 : 72;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
       <View
         style={{
-          width: compact ? 64 : 84,
-          height: compact ? 64 : 84,
+          width: size,
+          height: size,
           borderRadius: radius.lg,
-          backgroundColor: colors.charcoal,
+          backgroundColor: colors.streakBg,
           alignItems: 'center',
           justifyContent: 'center',
         }}>
         <View
           style={{
             position: 'absolute',
-            width: compact ? 48 : 64,
-            height: compact ? 48 : 64,
+            width: size - 16,
+            height: size - 16,
             borderRadius: 32,
             borderWidth: 1,
             borderColor: colors.amberSoft,
-            opacity: 0.7,
+            opacity: 0.55,
           }}
         />
-        <AppText variant={compact ? 'title' : 'numeral'} style={{ color: colors.amberSoft }}>
+        <AppText variant={compact ? 'title' : 'numeral'} style={{ color: colors.amberSoft, fontSize: compact ? 26 : 40 }}>
           {count}
         </AppText>
       </View>

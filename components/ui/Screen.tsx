@@ -1,4 +1,4 @@
-import { colors, space } from '@/theme';
+import { space, useTheme } from '@/theme';
 import { RefreshControl, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,9 +20,10 @@ export function Screen({
   onRefresh,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const padding = {
     paddingHorizontal: padded ? space.lg : 0,
-    paddingTop: space.md,
+    paddingTop: space.lg,
     paddingBottom: space.xxl,
   };
 

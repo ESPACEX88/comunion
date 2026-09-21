@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DUO_ANSWER_MAX } from '@/features/duo/moods';
 import type { DuoAnswer } from '@/lib/types';
-import { colors, radius, space } from '@/theme';
+import { Field } from '@/components/ui/Field';
+import { space } from '@/theme';
 import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 type Props = {
   question: string;
@@ -61,25 +62,14 @@ export function DuoQuestionCard({
         </View>
       ) : (
         <View style={{ marginTop: space.md }}>
-          <TextInput
+          <Field
             value={draft}
             onChangeText={(value) => setDraft(value.slice(0, DUO_ANSWER_MAX))}
             placeholder="Una respuesta corta, sin ensayar."
-            placeholderTextColor={colors.oliveSoft}
             maxLength={DUO_ANSWER_MAX}
             multiline
-            style={{
-              minHeight: 64,
-              borderWidth: 1,
-              borderColor: colors.line,
-              backgroundColor: colors.cream,
-              borderRadius: radius.md,
-              padding: space.md,
-              fontFamily: 'Literata_400Regular',
-              fontSize: 16,
-              color: colors.ink,
-              textAlignVertical: 'top',
-            }}
+            tall
+            style={{ marginTop: 0 }}
           />
           <AppText variant="caption" tone="soft" style={{ marginTop: 6 }}>
             {draft.length}/{DUO_ANSWER_MAX}

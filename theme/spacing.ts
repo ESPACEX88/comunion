@@ -3,8 +3,8 @@ export const space = {
   sm: 10,
   md: 16,
   lg: 24,
-  xl: 32,
-  xxl: 48,
+  xl: 36,
+  xxl: 56,
 } as const;
 
 export const radius = {

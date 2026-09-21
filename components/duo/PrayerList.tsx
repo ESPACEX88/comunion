@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { Member, PrayerRequest } from '@/lib/types';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { View } from 'react-native';
 
 type Props = {
@@ -16,6 +16,7 @@ type Props = {
 };
 
 export function PrayerList({ requests, members, friendName, selfId, onPray, justPrayedId }: Props) {
+  const { colors } = useTheme();
   if (requests.length === 0) {
     return (
       <EmptyState

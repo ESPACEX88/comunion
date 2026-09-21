@@ -1,18 +1,20 @@
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { SUPABASE_URL } from '@/lib/supabase';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function OnboardingAccount() {
   const { draft, setDraft } = useAppState();
   const { configured, session, signIn, signUp } = useAuth();
+  const { colors } = useTheme();
   const [mode, setMode] = useState<'entrar' | 'crear'>('crear');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -125,7 +127,7 @@ export default function OnboardingAccount() {
         onChangeText={setPassword}
         placeholder="Mínimo 6 caracteres"
         autoCapitalize="none"
-        secure
+        secureTextEntry
       />
       {error ? (
         <AppText variant="ui" tone="soft" style={{ marginTop: space.md, color: colors.terracotta }}>
@@ -172,43 +174,3 @@ function Choice({
   );
 }
 
-function Field({
-  value,
-  onChangeText,
-  placeholder,
-  autoCapitalize,
-  keyboardType,
-  secure,
-}: {
-  value: string;
-  onChangeText: (v: string) => void;
-  placeholder: string;
-  autoCapitalize?: 'none' | 'words';
-  keyboardType?: 'email-address';
-  secure?: boolean;
-}) {
-  return (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor={colors.oliveSoft}
-      autoCapitalize={autoCapitalize ?? 'none'}
-      keyboardType={keyboardType}
-      secureTextEntry={secure}
-      autoCorrect={false}
-      style={{
-        marginTop: space.sm,
-        backgroundColor: colors.paper,
-        borderWidth: 1,
-        borderColor: colors.line,
-        borderRadius: radius.md,
-        paddingHorizontal: space.md,
-        paddingVertical: 14,
-        fontFamily: 'Literata_400Regular',
-        fontSize: 18,
-        color: colors.ink,
-      }}
-    />
-  );
-}

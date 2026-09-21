@@ -2,7 +2,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Card } from '@/components/ui/Card';
 import { moodLabel } from '@/features/duo/moods';
 import type { CheckIn, Member } from '@/lib/types';
-import { colors, memberHues, space } from '@/theme';
+import { memberHues, space, useTheme } from '@/theme';
 import { View } from 'react-native';
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
 };
 
 export function CheckInCard({ checkIn, member, kicker }: Props) {
+  const { colors } = useTheme();
   const initial = member.name.trim().charAt(0).toUpperCase() || '·';
   return (
     <Card accent={member.isSelf ? 'amber' : 'olive'}>

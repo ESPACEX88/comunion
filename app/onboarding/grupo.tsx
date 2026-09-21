@@ -1,13 +1,14 @@
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
-import { EXAMPLE_INVITE_CODE } from '@/features/plans/content';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors, radius, space } from '@/theme';
+import { EXAMPLE_INVITE_CODE } from '@/features/plans/content';
+import { radius, space, useTheme } from '@/theme';
 import { Redirect, router } from 'expo-router';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 export default function OnboardingGroup() {
   const { draft, setDraft, state } = useAppState();
@@ -22,7 +23,7 @@ export default function OnboardingGroup() {
       <AppText variant="label" tone="olive">
         Comunión · el dúo
       </AppText>
-      <AppText variant="display" style={{ marginTop: space.md }}>
+      <AppText variant="title" style={{ marginTop: space.md }}>
         Nadie lee del todo solo.
       </AppText>
       <Ornament />
@@ -90,6 +91,7 @@ function Choice({
   active: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -106,39 +108,5 @@ function Choice({
         {label}
       </AppText>
     </Pressable>
-  );
-}
-
-function Field({
-  value,
-  onChangeText,
-  placeholder,
-  autoCapitalize,
-}: {
-  value: string;
-  onChangeText: (v: string) => void;
-  placeholder: string;
-  autoCapitalize?: 'characters' | 'words';
-}) {
-  return (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor={colors.oliveSoft}
-      autoCapitalize={autoCapitalize ?? 'words'}
-      style={{
-        marginTop: space.sm,
-        backgroundColor: colors.paper,
-        borderWidth: 1,
-        borderColor: colors.line,
-        borderRadius: radius.md,
-        paddingHorizontal: space.md,
-        paddingVertical: 14,
-        fontFamily: 'Literata_400Regular',
-        fontSize: 18,
-        color: colors.ink,
-      }}
-    />
   );
 }

@@ -1,16 +1,17 @@
 import { TabMark } from '@/components/nav/TabMark';
-import { colors, fonts } from '@/theme';
+import { fonts, useTheme } from '@/theme';
 import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.amberSoft,
-        tabBarInactiveTintColor: '#8A8176',
+        tabBarActiveTintColor: colors.tabActive,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: colors.charcoal,
+          backgroundColor: colors.tabBar,
           borderTopWidth: 0,
           height: 68,
           paddingTop: 8,
