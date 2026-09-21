@@ -94,9 +94,12 @@ export interface GroupInfo {
 }
 
 export interface PersistedState {
-  version: 3;
+  version: 4;
   onboardingComplete: boolean;
   userName: string;
+  userId: string | null;
+  remoteDuoId: string | null;
+  remotePlanId: string | null;
   notificationsEnabled: boolean;
   group: GroupInfo;
   groupPlanId: string;

@@ -2,11 +2,17 @@
 
 App cristiana para leer la Biblia **en dúo**: racha personal, racha compartida, check-in espiritual, oración mutua, versículos del corazón y una pregunta diaria de a dos. Un día cuenta **solo cuando se termina la lectura de ese día**, no con un visto suelto.
 
-MVP local (iOS + Android con Expo). Los datos viven en el teléfono. La UI está en español latinoamericano, con vos (estilo es-GT). El tono es de pareja de lectura íntima —vos y una amiga especial (Ana, en el mock)— no de un grupo grande de iglesia.
+MVP con Expo (iOS + Android). La UI está en español latinoamericano, con vos (estilo es-GT). El tono es de pareja de lectura íntima. Con sesión de Supabase, el dúo se sincroniza de verdad. Sin cuenta, queda un mock local en el teléfono.
 
 ## Cómo correrla
 
 Hace falta Node 18 o más reciente.
+
+1. Copiá `.env.example` a `.env`.
+2. En el dashboard de Supabase → **Settings → API**, pegá:
+   - `EXPO_PUBLIC_SUPABASE_URL` (p. ej. `https://zpjrfxbrfdapoufdvrqr.supabase.co`)
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` (la **anon** / publishable). **Nunca** la `service_role`.
+3. Reiniciá Expo para que tome las variables.
 
 ```bash
 npm install
@@ -28,20 +34,26 @@ npm run ios
 npm run web
 ```
 
-No hay claves de API ni `.env` secretos. No hace falta cuenta de Expo para el mock local.
+El `.env` está en `.gitignore`. El repo solo trae placeholders.
+
+### Confirmar email
+
+Por defecto Auth puede pedir confirmación de correo. Mientras prueban, en **Authentication → Providers → Email** desactivá **Confirm email**, o confirmá el usuario a mano en **Authentication → Users**. Si no, `signUp` crea la cuenta pero no deja sesión hasta confirmar.
 
 ## Mapa de pantallas
 
 | Ruta | Qué es |
 | --- | --- |
-| `/onboarding` | Primer arranque: nombre → crear o unirse a un grupo → elegir plan |
-| `/(tabs)` **Hoy** | Racha (con gracia si hace falta), plan de a dos, lectura, check-in, pregunta diaria, atajo a Nosotros |
-| `/lectura` | Pasaje del día; al completar se abre el sheet de Fase 1 y, si el plan es de a dos, la pregunta del día |
-| `/(tabs)` **Grupo** | **Nosotros** (vos y Ana): check-ins, pregunta de a dos, oración mutua, mural; la mesa queda abajo |
-| `/(tabs)` **Planes** | Plan activo (marcado **de a dos** cuando aplica), plan personal |
-| `/(tabs)` **Yo** | Perfil, historial (leído / gracia / hueco), demo de día saltado, borrar datos |
+| `/onboarding` | Cuenta (registro / login). Opcional: seguir sin cuenta en este teléfono |
+| `/onboarding/grupo` | Crear dúo (`create_duo`) o unirse con código (`join_duo`) |
+| `/onboarding/plan` | Confirmar «Salmos de a dos» |
+| `/(tabs)` **Hoy** | Racha, plan de a dos, lectura, check-in, pregunta diaria |
+| `/lectura` | Pasaje del día; al completar, check-in y pregunta |
+| `/(tabs)` **Grupo** | **Nosotros**: check-ins, pregunta, oración, mural, código de invitación |
+| `/(tabs)` **Planes** | Plan activo de a dos (sembrado en Supabase) |
+| `/(tabs)` **Yo** | Perfil, historial, cerrar sesión |
 
-Flujo fresco: instalar → onboarding de tres pasos → pestañas. Completar la lectura de hoy suma la racha personal, abre el check-in y la pregunta de a dos, y si Ana, Mateo, Lucía y vos ya terminaron, también suma la racha compartida.
+Flujo con nube: instalar → `.env` → registro de José → crear dúo → compartir código → Ana se registra y se une → check-in / oración / versículo / día del plan se ven en las dos cuentas (RLS: cada una solo ve su dúo).
 
 ## Fase 1 (dúo)
 
@@ -61,6 +73,24 @@ Dos piezas, también locales, sin pestañas nuevas:
 2. **Racha con gracia** — **1 día de gracia por semana calendario (lunes–domingo)**. El día de gracia **puentea** un hueco: la racha no se rompe, pero ese día **no suma** al número. Sigue haciendo falta completar la lectura de un día normal para que cuente. Si ya usaste la gracia de la semana, se ofrece **«Retomar juntos»**: hoy vale 1, sin culpa y sin inflar el pasado. La UI no usa lenguaje de vergüenza. En **Yo** hay un atajo de demo («Probar un día saltado») porque un día real no se puede atrasar el calendario.
 
 El payload pasó a `version: 3` (`duoAnswers`, `graceDates`). v1 y v2 migran en `lib/storage.ts`.
+
+## Fase 3 (Supabase: auth + sync del dúo)
+
+El esquema ya está en el proyecto `zpjrfxbrfdapoufdvrqr` (sa-east-1). La app no lo recrea.
+
+- Cliente en `lib/supabase.ts` con `EXPO_PUBLIC_*`. Sesión: AsyncStorage (web) o valor cifrado + clave en SecureStore (nativo).
+- RPCs `create_duo` / `join_duo` (authenticated). Al crear o unirse se siembra «Salmos de a dos» en `plans` / `plan_days` si no hay plan activo.
+- Check-ins, oraciones, versículos del corazón, completados y respuestas van a las tablas reales, filtradas por el dúo (RLS).
+- La racha con 1 gracia/semana sigue en el cliente; `plan_completions.used_grace` persiste el puente.
+- AsyncStorage queda como caché (`version: 4`). Con sesión, Supabase es la fuente de verdad.
+- Sin cuenta, el mock de las fases 1–2 sigue disponible («Seguir sin cuenta»).
+
+**Cómo probar entre dos personas**
+
+1. José se registra (email + contraseña + nombre) → Crear dúo → copia el código.
+2. Ana se registra en otro aparato (o perfil web) → Unirme con el código.
+3. José completa la lectura, deja check-in, una respuesta y un pedido de oración.
+4. Ana abre Nosotros: ve el check-in, la pregunta, el pedido; puede marcar «Ya oré por ti» y completar su día.
 
 ## Lógica de rachas (cliente)
 
@@ -94,27 +124,25 @@ Los datos sobreviven un reinicio de la app. En **Yo** se pueden borrar para volv
 
 El día del plan se elige por calendario desde la fecha en que se empezó (`planDayForDate` en `features/plans/content.ts`).
 
-## Mock de ahora vs backend después
+## Datos: local vs Supabase
 
-| Ahora | Después (Supabase u otro) |
+| Sin sesión (este teléfono) | Con sesión |
 | --- | --- |
-| Perfil, onboarding, rachas y hilo en AsyncStorage | Auth + tablas `profiles`, `groups`, `memberships`, `reading_logs`, `messages` |
-| Amigos fijos: Ana, Mateo, Lucía | Miembros reales e invitaciones |
-| Código de invitación copiable, sin servidor | Código único, join real |
-| Notificaciones: solo un interruptor | Push con permiso del sistema |
-| Check-ins, oraciones y mural en el mismo JSON | Tablas `check_ins`, `prayer_requests`, `heart_verses` |
-| Preguntas de a dos y gracia en el mismo JSON | Tablas `duo_answers`, `grace_days` |
-| Ana como amiga especial mock | Vínculo real de dos personas |
+| AsyncStorage mock (Ana, Mateo, Lucía) | Auth + `profiles`, `duos`, `duo_members` |
+| Código de ejemplo `MESA-7` | `create_duo` / `join_duo`, código real de 6 caracteres |
+| Check-ins, oraciones, mural, respuestas en JSON | Tablas `check_ins`, `prayers`, `heart_verses`, `plan_answers` |
+| Completados y gracia en JSON | `plan_completions` (`used_grace`) |
+| Plan embebido en la app | Fila por dúo en `plans` + `plan_days`; el texto del pasaje sigue en la app |
 
-La frontera está en `lib/data-source.ts`: mismas firmas (`load` / `save` / `clear`). Las pantallas no hablan con AsyncStorage directo. Cuando exista backend, se cambia la implementación ahí.
+La caché local está en `lib/storage.ts`. Las mutaciones del dúo viven en `lib/supabase-api.ts`.
 
 ## Carpetas
 
 ```
 app/           rutas de Expo Router (tabs, onboarding, lectura)
 components/    UI, racha, grupo, lectura, dúo
-features/      estado de la app, planes, dúo (ánimos y semillas), miembros mock
-lib/           tipos, fechas, rachas, persistencia, data-source
+features/      estado, auth, planes, dúo, miembros mock
+lib/           supabase, tipos, fechas, rachas, persistencia
 theme/         color, tipo, espacio
 ```
 

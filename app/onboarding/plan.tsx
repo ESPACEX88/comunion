@@ -3,42 +3,43 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
-import { ALL_PLANS } from '@/features/plans/content';
+import { ALL_PLANS, PSALMS_PLAN } from '@/features/plans/content';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { colors, space } from '@/theme';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export default function OnboardingPlan() {
-  const { draft, setDraft, completeOnboarding } = useAppState();
+  const { draft, setDraft, completeOnboarding, syncError } = useAppState();
+  const { session } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const plans = session ? [PSALMS_PLAN] : ALL_PLANS;
 
   return (
     <Screen>
       <AppText variant="label" tone="olive">
-        Comunión · 3 de 3
+        Comunión · el plan
       </AppText>
       <AppText variant="display" style={{ marginTop: space.md }}>
-        El plan de la mesa.
+        Salmos de a dos.
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        Este es el plan compartido. Un día cuenta cuando el pasaje se termina, no cuando se marca de
-        apuro. Si elegís el de a dos, cada tarde hay una pregunta suave para hablar.
+        {session
+          ? 'Al crear o unirte, se siembra este plan de siete días con una pregunta suave cada tarde. Un día cuenta cuando terminás el pasaje.'
+          : 'Este es el plan compartido. Un día cuenta cuando el pasaje se termina, no cuando se marca de apuro.'}
       </AppText>
       <View style={{ marginTop: space.lg, gap: space.md }}>
-        {ALL_PLANS.map((plan) => {
+        {plans.map((plan) => {
           const active = draft.planId === plan.id;
           return (
             <Pressable key={plan.id} onPress={() => setDraft({ planId: plan.id })}>
               <Card accent={active ? 'amber' : 'none'}>
                 <AppText variant="label" tone={active ? 'amber' : 'soft'}>
-                  {plan.recommendedFor === 'duo'
-                    ? 'Recomendado para las dos'
-                    : plan.recommendedFor === 'group'
-                      ? 'Recomendado para el grupo'
-                      : 'Más corto'}
-                  {' · '}
-                  {plan.durationLabel}
+                  {plan.recommendedFor === 'duo' ? 'De a dos' : 'Más corto'} · {plan.durationLabel}
                 </AppText>
                 <AppText variant="subtitle" style={{ marginTop: 6 }}>
                   {plan.title}
@@ -52,17 +53,28 @@ export default function OnboardingPlan() {
         })}
       </View>
       <View style={{ height: space.lg }} />
+      {error || syncError ? (
+        <AppText variant="ui" style={{ color: colors.terracotta, marginBottom: space.md }}>
+          {error ?? syncError}
+        </AppText>
+      ) : null}
       <Button
-        label="Entrar a Comunión"
+        label={busy ? 'Un segundo…' : session ? 'Entrar al dúo' : 'Entrar a Comunión'}
+        disabled={busy}
         onPress={async () => {
-          await completeOnboarding();
-          router.replace('/(tabs)');
+          setBusy(true);
+          setError(null);
+          try {
+            await completeOnboarding();
+            router.replace('/(tabs)');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'No se pudo entrar.');
+          } finally {
+            setBusy(false);
+          }
         }}
       />
       <Button label="Atrás" variant="ghost" onPress={() => router.back()} style={{ marginTop: 10 }} />
-      <AppText variant="caption" tone="soft" style={{ marginTop: space.md, color: colors.charcoalSoft }}>
-        Podés cambiar de plan después, desde la pestaña Planes.
-      </AppText>
     </Screen>
   );
 }

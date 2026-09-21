@@ -4,31 +4,37 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { EXAMPLE_INVITE_CODE } from '@/features/plans/content';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { colors, radius, space } from '@/theme';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { Pressable, TextInput, View } from 'react-native';
 
 export default function OnboardingGroup() {
-  const { draft, setDraft } = useAppState();
+  const { draft, setDraft, state } = useAppState();
+  const { session } = useAuth();
+
+  if (state.remoteDuoId) {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <Screen>
       <AppText variant="label" tone="olive">
-        Comunión · 2 de 3
+        Comunión · el dúo
       </AppText>
       <AppText variant="display" style={{ marginTop: space.md }}>
         Nadie lee del todo solo.
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        Esta mesa es para leer con alguien cercano. En el mock, Ana es tu amiga especial: el dúo
-        (check-in, oración, versículos del corazón) vive dentro del grupo. Mateo y Lucía acompañan
-        la mesa.
+        {session
+          ? 'Una crea el dúo y comparte el código. La otra se une. El plan «Salmos de a dos» se siembra solo, con una pregunta cada tarde.'
+          : 'Sin cuenta, Ana queda de amiga mock en este teléfono. Con cuenta, el dúo es de verdad.'}
       </AppText>
       <View style={{ height: space.lg }} />
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         <Choice
-          label="Crear grupo"
+          label="Crear dúo"
           active={draft.mode === 'create'}
           onPress={() => setDraft({ mode: 'create' })}
         />
@@ -42,12 +48,12 @@ export default function OnboardingGroup() {
       {draft.mode === 'create' ? (
         <>
           <AppText variant="label" tone="amber">
-            Nombre del grupo
+            Nombre del dúo
           </AppText>
           <Field
             value={draft.groupName}
             onChangeText={(groupName) => setDraft({ groupName })}
-            placeholder="Mesa de Emaús"
+            placeholder="Nosotros"
           />
         </>
       ) : (
@@ -58,16 +64,18 @@ export default function OnboardingGroup() {
           <Field
             value={draft.inviteCode}
             onChangeText={(inviteCode) => setDraft({ inviteCode })}
-            placeholder={EXAMPLE_INVITE_CODE}
+            placeholder="A3F9C2"
             autoCapitalize="characters"
           />
           <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-            Probá {EXAMPLE_INVITE_CODE} para entrar al grupo de ejemplo.
+            {session
+              ? 'El código lo comparte quien creó el dúo. Seis letras o números.'
+              : `En el mock local podés probar ${EXAMPLE_INVITE_CODE}.`}
           </AppText>
         </>
       )}
       <View style={{ height: space.xl }} />
-      <Button label="Elegir el plan" onPress={() => router.push('/onboarding/plan')} />
+      <Button label="El plan de a dos" onPress={() => router.push('/onboarding/plan')} />
       <Button label="Atrás" variant="ghost" onPress={() => router.back()} style={{ marginTop: 10 }} />
     </Screen>
   );
