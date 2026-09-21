@@ -1,4 +1,4 @@
-import { colors, fonts, typeScale } from '@/theme';
+import { fonts, typeScale, useTheme } from '@/theme';
 import { Text, type TextProps } from 'react-native';
 
 type Variant =
@@ -42,14 +42,6 @@ type Props = TextProps & {
   italic?: boolean;
 };
 
-const toneColor = {
-  ink: colors.ink,
-  soft: colors.charcoalSoft,
-  amber: colors.amberDeep,
-  olive: colors.olive,
-  cream: colors.cream,
-};
-
 export function AppText({
   variant = 'body',
   tone = 'ink',
@@ -58,6 +50,14 @@ export function AppText({
   children,
   ...rest
 }: Props) {
+  const { colors } = useTheme();
+  const toneColor = {
+    ink: colors.ink,
+    soft: colors.charcoalSoft,
+    amber: colors.amberDeep,
+    olive: colors.olive,
+    cream: colors.cream,
+  };
   const fontFamily = italic
     ? variant === 'verse' || variant === 'body'
       ? fonts.readingItalic

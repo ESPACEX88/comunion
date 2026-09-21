@@ -1,6 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
 import type { Member } from '@/lib/types';
-import { colors, memberHues, radius } from '@/theme';
+import { memberHues, radius, useTheme } from '@/theme';
 import { View } from 'react-native';
 
 function initials(name: string): string {
@@ -18,6 +18,7 @@ type Props = {
 };
 
 export function MemberRow({ member, completed }: Props) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -61,6 +62,7 @@ export function MemberRow({ member, completed }: Props) {
 }
 
 export function Avatar({ name, hue }: { name: string; hue: Member['hue'] }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{

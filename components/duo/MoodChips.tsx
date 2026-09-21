@@ -1,7 +1,7 @@
 import { AppText } from '@/components/ui/AppText';
 import { MOODS } from '@/features/duo/moods';
 import type { MoodId } from '@/lib/types';
-import { colors, radius } from '@/theme';
+import { radius, useTheme } from '@/theme';
 import { Pressable, View } from 'react-native';
 
 type Props = {
@@ -10,6 +10,7 @@ type Props = {
 };
 
 export function MoodChips({ value, onChange }: Props) {
+  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
       {MOODS.map((mood) => {

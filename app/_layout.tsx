@@ -1,6 +1,6 @@
 import { AppStateProvider } from '@/features/app-state/AppStateProvider';
 import { AuthProvider } from '@/features/auth/AuthProvider';
-import { colors } from '@/theme';
+import { ThemeProvider, useTheme } from '@/theme';
 import {
   Fraunces_400Regular,
   Fraunces_400Regular_Italic,
@@ -14,7 +14,7 @@ import {
   Literata_400Regular_Italic,
   Literata_500Medium,
 } from '@expo-google-fonts/literata';
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider as NavTheme } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -28,19 +28,6 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
-
-const ComuniónTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: colors.amber,
-    background: colors.cream,
-    card: colors.cream,
-    text: colors.ink,
-    border: colors.line,
-    notification: colors.amber,
-  },
-};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -68,10 +55,33 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <ThemeProvider value={ComuniónTheme}>
+    <ThemeProvider>
+      <ThemedRoot />
+    </ThemeProvider>
+  );
+}
+
+function ThemedRoot() {
+  const { colors, scheme } = useTheme();
+  const navTheme = {
+    ...DefaultTheme,
+    dark: scheme === 'dark',
+    colors: {
+      ...DefaultTheme.colors,
+      primary: colors.amber,
+      background: colors.cream,
+      card: colors.cream,
+      text: colors.ink,
+      border: colors.line,
+      notification: colors.amber,
+    },
+  };
+
+  return (
+    <NavTheme value={navTheme}>
       <AuthProvider>
         <AppStateProvider>
-          <StatusBar style="dark" />
+          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -82,9 +92,10 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="lectura" />
+            <Stack.Screen name="nosotros" />
           </Stack>
         </AppStateProvider>
       </AuthProvider>
-    </ThemeProvider>
+    </NavTheme>
   );
 }

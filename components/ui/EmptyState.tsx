@@ -1,6 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { View } from 'react-native';
 
 type Props = {
@@ -12,25 +12,18 @@ type Props = {
 };
 
 export function EmptyState({ kicker, title, body, actionLabel, onAction }: Props) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
         borderWidth: 1,
         borderColor: colors.line,
         borderRadius: radius.md,
-        padding: space.lg,
+        paddingVertical: space.xl,
+        paddingHorizontal: space.lg,
         backgroundColor: colors.creamDeep,
         gap: space.sm,
       }}>
-      <View
-        style={{
-          width: 36,
-          height: 4,
-          backgroundColor: colors.oliveSoft,
-          borderRadius: 2,
-          marginBottom: 4,
-        }}
-      />
       {kicker ? (
         <AppText variant="label" tone="olive">
           {kicker}

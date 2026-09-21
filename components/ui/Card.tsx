@@ -1,4 +1,4 @@
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 type Props = {
@@ -7,7 +7,8 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function Card({ children, accent = 'amber', style }: Props) {
+export function Card({ children, accent = 'none', style }: Props) {
+  const { colors } = useTheme();
   return (
     <View
       style={[

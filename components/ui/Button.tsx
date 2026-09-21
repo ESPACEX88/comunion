@@ -1,5 +1,5 @@
 import { AppText } from '@/components/ui/AppText';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { forwardRef } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type View, type ViewStyle } from 'react-native';
 
@@ -15,10 +15,11 @@ export const Button = forwardRef<View, Props>(function Button(
   { label, variant = 'primary', style, disabled, ...rest },
   ref,
 ) {
+  const { colors } = useTheme();
   const palette = {
     primary: { bg: colors.amber, fg: colors.white, border: colors.amber },
     olive: { bg: colors.olive, fg: colors.white, border: colors.olive },
-    ghost: { bg: 'transparent', fg: colors.charcoal, border: colors.line },
+    ghost: { bg: 'transparent', fg: colors.ink, border: colors.line },
     inline: { bg: 'transparent', fg: colors.amberDeep, border: 'transparent' },
   }[variant];
 

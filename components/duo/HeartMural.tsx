@@ -1,7 +1,7 @@
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { HeartVerse, Member } from '@/lib/types';
-import { colors, radius, space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { View } from 'react-native';
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
 };
 
 export function HeartMural({ verses, members, selfId }: Props) {
+  const { colors } = useTheme();
   if (verses.length === 0) {
     return (
       <EmptyState

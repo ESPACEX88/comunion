@@ -1,13 +1,11 @@
-import { Screen } from '@/components/ui/Screen';
-import { ALL_PLANS, JOHN_PLAN, JOHN_PLAN_ID, PSALMS_PLAN_ID, isDuoPlan, planAudienceLabel } from '@/features/plans/content';
-import { useAppState } from '@/features/app-state/AppStateProvider';
-import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Ornament } from '@/components/ui/Ornament';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { Screen } from '@/components/ui/Screen';
+import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
+import { ALL_PLANS, JOHN_PLAN, JOHN_PLAN_ID, isDuoPlan } from '@/features/plans/content';
 import { calendarDiff } from '@/lib/date';
 import { space } from '@/theme';
 import { router } from 'expo-router';
@@ -23,13 +21,11 @@ export default function PlanesScreen() {
     todayPersonalReading,
     startPersonalPlan,
     clearPersonalPlan,
-    switchGroupPlan,
     openReading,
+    switchGroupPlan,
     live,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
-
-  const otherGroupPlan = ALL_PLANS.find((plan) => plan.id !== groupPlan.id);
   const personalElapsed =
     state.personalPlanStartDate != null
       ? Math.max(1, calendarDiff(state.personalPlanStartDate, today) + 1)
@@ -40,79 +36,71 @@ export default function PlanesScreen() {
       <AppText variant="label" tone="olive">
         Planes
       </AppText>
-      <AppText variant="display" style={{ marginTop: 6 }}>
-        Lo que están leyendo.
+      <AppText variant="title" style={{ marginTop: 8 }}>
+        {groupPlan.title}
       </AppText>
-      <Ornament />
-      <AppText variant="body" tone="soft">
-        El plan de a dos es el de la mesa íntima: un pasaje y una pregunta para hablar. El personal
-        es el que vos cargás aparte, sin quitarle el día compartido.
+      <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
+        {isDuoPlan(groupPlan) ? 'De a dos' : 'De la mesa'} · {groupPlan.durationLabel} ·{' '}
+        {state.group.name}
       </AppText>
-      <View style={{ height: space.lg }} />
-      <AppText variant="label" tone="amber">
-        {isDuoPlan(groupPlan) ? 'Plan de a dos' : 'Plan del grupo'}
+
+      <View style={{ marginTop: space.xl }}>
+        <ProgressBar value={todayGroupReading.dayNumber} total={groupPlan.days.length} />
+        <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
+          Día {todayGroupReading.dayNumber} de {groupPlan.days.length}
+        </AppText>
+      </View>
+
+      <AppText variant="subtitle" style={{ marginTop: space.xl }}>
+        {todayGroupReading.reference}
       </AppText>
-      <View style={{ height: space.sm }} />
-      <Card>
-        <AppText variant="label" tone="olive">
-          {planAudienceLabel(groupPlan)} · {groupPlan.durationLabel}
-        </AppText>
-        <AppText variant="subtitle" style={{ marginTop: 6 }}>
-          {groupPlan.title}
-        </AppText>
-        <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-          {groupPlan.subtitle} · {state.group.name}
-        </AppText>
-        <View style={{ marginVertical: space.md }}>
-          <ProgressBar value={todayGroupReading.dayNumber} total={groupPlan.days.length} />
-        </View>
-        <AppText variant="ui">
-          Hoy: {todayGroupReading.reference} — {todayGroupReading.title}
-        </AppText>
-        {todayGroupReading.prompt ? (
-          <AppText variant="ui" tone="soft" italic style={{ marginTop: 8 }}>
-            Pregunta de hoy: {todayGroupReading.prompt}
-          </AppText>
-        ) : null}
-        <Button
-          label="Abrir la lectura de hoy"
-          style={{ marginTop: space.md }}
-          onPress={() => {
-            openReading();
-            router.push({ pathname: '/lectura', params: { plan: 'group' } });
-          }}
-        />
-        {otherGroupPlan && !live ? (
-          <Button
-            label={`Cambiar al plan «${otherGroupPlan.title}»`}
-            variant="ghost"
-            style={{ marginTop: 8 }}
-            onPress={() => switchGroupPlan(otherGroupPlan.id)}
-          />
-        ) : null}
-      </Card>
-      <View style={{ height: space.lg }} />
-      <AppText variant="label" tone="amber">
-        Plan personal
+      <AppText variant="body" tone="soft" style={{ marginTop: 6 }}>
+        {todayGroupReading.title}
       </AppText>
-      <View style={{ height: space.sm }} />
+      {todayGroupReading.prompt ? (
+        <AppText variant="ui" italic tone="soft" style={{ marginTop: space.md }}>
+          {todayGroupReading.prompt}
+        </AppText>
+      ) : null}
+
+      <Button
+        label="Abrir la lectura de hoy"
+        style={{ marginTop: space.xl }}
+        onPress={() => {
+          openReading();
+          router.push({ pathname: '/lectura', params: { plan: 'group' } });
+        }}
+      />
+      {!live
+        ? ALL_PLANS.filter((plan) => plan.id !== groupPlan.id).map((plan) => (
+            <Button
+              key={plan.id}
+              label={`Cambiar a «${plan.title}»`}
+              variant="ghost"
+              style={{ marginTop: 8 }}
+              onPress={() => switchGroupPlan(plan.id)}
+            />
+          ))
+        : null}
+
+      <View style={{ height: space.xxl }} />
+      <AppText variant="label" tone="soft">
+        Aparte, si querés
+      </AppText>
+      <View style={{ height: space.md }} />
       {personalPlan && todayPersonalReading ? (
-        <Card accent="olive">
+        <View>
           <AppText variant="subtitle">{personalPlan.title}</AppText>
-          <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
+          <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
             Día {todayPersonalReading.dayNumber} de {personalPlan.days.length} · {personalElapsed}{' '}
             {personalElapsed === 1 ? 'día' : 'días'} desde que lo empezaste
           </AppText>
           <View style={{ marginVertical: space.md }}>
             <ProgressBar value={todayPersonalReading.dayNumber} total={personalPlan.days.length} />
           </View>
-          <AppText variant="ui">
-            Hoy: {todayPersonalReading.reference} — {todayPersonalReading.title}
-          </AppText>
           <Button
             label="Leer el plan personal"
             variant="olive"
-            style={{ marginTop: space.md }}
             onPress={() => {
               openReading();
               router.push({ pathname: '/lectura', params: { plan: 'personal' } });
@@ -124,24 +112,16 @@ export default function PlanesScreen() {
             style={{ marginTop: 8 }}
             onPress={clearPersonalPlan}
           />
-        </Card>
+        </View>
       ) : (
         <EmptyState
-          kicker="Aparte del grupo"
-          title="No tenés un plan personal todavía."
-          body="El de la mesa sigue activo. Este espacio es para lo que vos querés leer despacio, sin sustituir el día compartido."
+          kicker="Personal"
+          title="No tenés un plan aparte."
+          body="El de la mesa sigue. Este espacio es para lo que vos querés leer despacio."
           actionLabel={`Empezar «${JOHN_PLAN.title}»`}
           onAction={() => startPersonalPlan(JOHN_PLAN_ID)}
         />
       )}
-      {!personalPlan && groupPlan.id !== PSALMS_PLAN_ID ? (
-        <Button
-          label="Empezar Salmos en lo personal"
-          variant="inline"
-          style={{ marginTop: space.md }}
-          onPress={() => startPersonalPlan(PSALMS_PLAN_ID)}
-        />
-      ) : null}
     </Screen>
   );
 }

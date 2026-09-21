@@ -1,10 +1,11 @@
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 import { View } from 'react-native';
 
 type Kind = 'hoy' | 'grupo' | 'planes' | 'yo';
 
 export function TabMark({ kind, focused }: { kind: Kind; focused: boolean }) {
-  const color = focused ? '#E8C48A' : '#8A8176';
+  const { colors } = useTheme();
+  const color = focused ? colors.tabActive : colors.tabInactive;
 
   if (kind === 'hoy') {
     return (

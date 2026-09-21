@@ -6,13 +6,14 @@ import { Screen } from '@/components/ui/Screen';
 import { ALL_PLANS, PSALMS_PLAN } from '@/features/plans/content';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors, space } from '@/theme';
+import { space, useTheme } from '@/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export default function OnboardingPlan() {
   const { draft, setDraft, completeOnboarding, syncError } = useAppState();
+  const { colors } = useTheme();
   const { session } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

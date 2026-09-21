@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { CHECK_IN_NOTE_MAX, DUO_ANSWER_MAX, HEART_NOTE_MAX } from '@/features/duo/moods';
 import type { FeaturedVerse, MoodId } from '@/lib/types';
-import { colors, radius, space } from '@/theme';
+import { Field } from '@/components/ui/Field';
+import { radius, space, useTheme } from '@/theme';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, View } from 'react-native';
 
 type Props = {
   visible: boolean;
@@ -37,6 +38,7 @@ export function AfterReadingSheet({
   const [note, setNote] = useState('');
   const [heartNote, setHeartNote] = useState('');
   const [duoAnswer, setDuoAnswer] = useState('');
+  const { colors } = useTheme();
 
   const resetAnd = (fn: () => void) => {
     setMood(null);
@@ -101,14 +103,13 @@ export function AfterReadingSheet({
             <AppText variant="label" tone="amber">
               ¿Qué me dijo Dios hoy?
             </AppText>
-            <TextInput
+            <Field
               value={note}
               onChangeText={(value) => setNote(value.slice(0, CHECK_IN_NOTE_MAX))}
               placeholder="Una línea. Es entre vos y ella."
-              placeholderTextColor={colors.oliveSoft}
               maxLength={CHECK_IN_NOTE_MAX}
               multiline
-              style={inputStyle}
+              tall
             />
             <AppText variant="caption" tone="soft">
               {note.length}/{CHECK_IN_NOTE_MAX} · opcional
@@ -129,14 +130,13 @@ export function AfterReadingSheet({
               <AppText variant="caption" tone="amber" style={{ marginTop: 6 }}>
                 {featured.reference}
               </AppText>
-              <TextInput
+              <Field
                 value={heartNote}
                 onChangeText={(value) => setHeartNote(value.slice(0, HEART_NOTE_MAX))}
                 placeholder={`Esto me acordó de ${friendName} / de lo que hablamos…`}
-                placeholderTextColor={colors.oliveSoft}
                 maxLength={HEART_NOTE_MAX}
                 multiline
-                style={[inputStyle, { marginTop: space.sm }]}
+                tall
               />
               <AppText variant="caption" tone="soft">
                 Si escribís una nota, se guarda en el mural de las dos.
@@ -156,14 +156,13 @@ export function AfterReadingSheet({
                 <AppText variant="ui" style={{ marginTop: 8 }}>
                   {question}
                 </AppText>
-                <TextInput
+                <Field
                   value={duoAnswer}
                   onChangeText={(value) => setDuoAnswer(value.slice(0, DUO_ANSWER_MAX))}
                   placeholder="Una respuesta corta, para ella y para vos."
-                  placeholderTextColor={colors.oliveSoft}
                   maxLength={DUO_ANSWER_MAX}
                   multiline
-                  style={[inputStyle, { marginTop: space.sm }]}
+                  tall
                 />
                 <AppText variant="caption" tone="soft">
                   {duoAnswer.length}/{DUO_ANSWER_MAX} · opcional
@@ -192,17 +191,3 @@ export function AfterReadingSheet({
     </Modal>
   );
 }
-
-const inputStyle = {
-  minHeight: 64,
-  marginTop: 8,
-  borderWidth: 1,
-  borderColor: colors.line,
-  backgroundColor: colors.cream,
-  borderRadius: radius.md,
-  padding: space.md,
-  fontFamily: 'Literata_400Regular' as const,
-  fontSize: 16,
-  color: colors.ink,
-  textAlignVertical: 'top' as const,
-};

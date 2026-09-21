@@ -1,18 +1,24 @@
 import { AppText } from '@/components/ui/AppText';
-import { colors, radius } from '@/theme';
+import { radius, useTheme } from '@/theme';
 import { View } from 'react-native';
 
-const tones = {
-  pendiente: { bg: '#EFE3CF', fg: colors.charcoalSoft, label: 'Pendiente' },
-  en_curso: { bg: '#F3DEC0', fg: colors.amberDeep, label: 'En curso' },
-  completado: { bg: '#E0E6D4', fg: colors.olive, label: 'Completado' },
+const labels = {
+  pendiente: 'Pendiente',
+  en_curso: 'En curso',
+  completado: 'Completado',
 } as const;
 
 type Props = {
-  status: keyof typeof tones;
+  status: keyof typeof labels;
 };
 
 export function StatusBadge({ status }: Props) {
+  const { colors } = useTheme();
+  const tones = {
+    pendiente: { bg: colors.statusPendienteBg, fg: colors.statusPendienteFg },
+    en_curso: { bg: colors.statusCursoBg, fg: colors.statusCursoFg },
+    completado: { bg: colors.statusDoneBg, fg: colors.statusDoneFg },
+  };
   const tone = tones[status];
   return (
     <View
@@ -24,7 +30,7 @@ export function StatusBadge({ status }: Props) {
         borderRadius: radius.sm,
       }}>
       <AppText variant="label" style={{ color: tone.fg, fontSize: 10 }}>
-        {tone.label}
+        {labels[status]}
       </AppText>
     </View>
   );
