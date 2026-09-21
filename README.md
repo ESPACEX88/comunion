@@ -51,7 +51,8 @@ Por defecto Auth puede pedir confirmación de correo. Mientras prueban, en **Aut
 | `/lectura` | Pasaje del día; al completar, check-in y pregunta |
 | `/(tabs)` **Grupo** | **Nosotros**: check-ins, pregunta, oración, mural, código de invitación |
 | `/(tabs)` **Planes** | Plan activo de a dos (sembrado en Supabase) |
-| `/(tabs)` **Yo** | Perfil, historial, cerrar sesión |
+| `/(tabs)` **Yo** | Perfil, recordatorios, historial, cerrar sesión |
+| `/recordatorios` | Avisos locales: Tu momento (mañana) y Juntos (si hay dúo) |
 
 Flujo con nube: instalar → `.env` → registro de José → crear dúo → compartir código → Ana se registra y se une → check-in / oración / versículo / día del plan se ven en las dos cuentas (RLS: cada una solo ve su dúo).
 
@@ -99,6 +100,18 @@ La app, al entrar al dúo, siembra «Salmos de a dos» si todavía no hay plan a
 2. Ana se registra en otro aparato (o perfil web) → Unirme con el código.
 3. José completa la lectura, deja check-in, una respuesta y un pedido de oración.
 4. Ana abre Nosotros: ve el check-in, la pregunta, el pedido; puede marcar «Ya oré por ti» y completar su día.
+
+## Recordatorios (locales, Expo Go)
+
+Los avisos de este MVP son **notificaciones locales programadas** (`expo-notifications`), no un servidor de push.
+
+- **Tu momento** (7:00 por defecto): lectura o diario.
+- **Juntos** (20:00): solo si hay dúo. Oración o el plan de a dos.
+- Prefs en `reminder_prefs` (RLS: solo dueño). Sin sesión, quedan en AsyncStorage.
+- Al cambiar hora o toggle se reprograman. Al cerrar sesión se cancelan las de este teléfono.
+- `expo_push_token` se guarda si Expo Go lo entrega. **Push remoto entre dispositivos / EAS viene después.**
+
+En iPhone: Yo → Recordatorios → Permitir. En simulador/Expo Go el permiso + el horario diario son el camino estable. «Probar aviso ahora» dispara uno a los 2 segundos.
 
 ## Lógica de rachas (cliente)
 

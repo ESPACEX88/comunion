@@ -280,6 +280,41 @@ export type Database = {
         Update: { completed_on?: string; note?: string | null };
         Relationships: [];
       };
+      reminder_prefs: {
+        Row: {
+          user_id: string;
+          solo_enabled: boolean;
+          solo_hour: number;
+          solo_minute: number;
+          duo_enabled: boolean;
+          duo_hour: number;
+          duo_minute: number;
+          expo_push_token: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          solo_enabled?: boolean;
+          solo_hour?: number;
+          solo_minute?: number;
+          duo_enabled?: boolean;
+          duo_hour?: number;
+          duo_minute?: number;
+          expo_push_token?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          solo_enabled?: boolean;
+          solo_hour?: number;
+          solo_minute?: number;
+          duo_enabled?: boolean;
+          duo_hour?: number;
+          duo_minute?: number;
+          expo_push_token?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
