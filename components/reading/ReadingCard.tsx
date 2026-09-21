@@ -1,0 +1,37 @@
+import { AppText } from '@/components/ui/AppText';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import type { Plan, PlanDay } from '@/lib/types';
+import { space } from '@/theme';
+import { View } from 'react-native';
+
+type Props = {
+  plan: Plan;
+  day: PlanDay;
+  cta: string;
+  onPress: () => void;
+};
+
+export function ReadingCard({ plan, day, cta, onPress }: Props) {
+  return (
+    <Card>
+      <AppText variant="label" tone="amber">
+        Lectura de hoy · {plan.title}
+      </AppText>
+      <View style={{ height: space.sm }} />
+      <AppText variant="title">{day.title}</AppText>
+      <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
+        {day.reference} · Día {day.dayNumber} de {plan.days.length}
+      </AppText>
+      <View style={{ marginVertical: space.md }}>
+        <ProgressBar value={day.dayNumber} total={plan.days.length} />
+      </View>
+      <AppText variant="body" italic tone="soft">
+        {day.teaser}
+      </AppText>
+      <View style={{ height: space.md }} />
+      <Button label={cta} onPress={onPress} />
+    </Card>
+  );
+}
