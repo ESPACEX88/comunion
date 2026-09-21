@@ -23,7 +23,7 @@ export default function OnboardingPlan() {
       <Ornament />
       <AppText variant="body" tone="soft">
         Este es el plan compartido. Un día cuenta cuando el pasaje se termina, no cuando se marca de
-        apuro. Después podés sumar uno personal.
+        apuro. Si elegís el de a dos, cada tarde hay una pregunta suave para hablar.
       </AppText>
       <View style={{ marginTop: space.lg, gap: space.md }}>
         {ALL_PLANS.map((plan) => {
@@ -32,7 +32,11 @@ export default function OnboardingPlan() {
             <Pressable key={plan.id} onPress={() => setDraft({ planId: plan.id })}>
               <Card accent={active ? 'amber' : 'none'}>
                 <AppText variant="label" tone={active ? 'amber' : 'soft'}>
-                  {plan.recommendedFor === 'group' ? 'Recomendado para el grupo' : 'Más corto'}
+                  {plan.recommendedFor === 'duo'
+                    ? 'Recomendado para las dos'
+                    : plan.recommendedFor === 'group'
+                      ? 'Recomendado para el grupo'
+                      : 'Más corto'}
                   {' · '}
                   {plan.durationLabel}
                 </AppText>

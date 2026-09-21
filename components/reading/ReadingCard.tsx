@@ -2,6 +2,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { isDuoPlan } from '@/features/plans/content';
 import type { Plan, PlanDay } from '@/lib/types';
 import { space } from '@/theme';
 import { View } from 'react-native';
@@ -17,7 +18,7 @@ export function ReadingCard({ plan, day, cta, onPress }: Props) {
   return (
     <Card>
       <AppText variant="label" tone="amber">
-        Lectura de hoy · {plan.title}
+        {isDuoPlan(plan) ? 'Plan de a dos' : 'Lectura de hoy'} · {plan.title}
       </AppText>
       <View style={{ height: space.sm }} />
       <AppText variant="title">{day.title}</AppText>

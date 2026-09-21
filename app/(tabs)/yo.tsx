@@ -1,4 +1,5 @@
 import { Avatar } from '@/components/group/MemberRow';
+import { GraceCard } from '@/components/duo/GraceCard';
 import { StreakMark } from '@/components/streak/StreakMark';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -20,9 +21,14 @@ export default function YoScreen() {
     setNotifications,
     setUserName,
     resetLocalData,
+    grace,
+    useGraceDay,
+    simulateMissedDay,
+    specialFriend,
   } = useAppState();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
+  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
 
   return (
     <Screen>
@@ -59,18 +65,28 @@ export default function YoScreen() {
       <StreakMark
         count={personalStreak}
         label="Racha personal"
-        hint={`Tu mejor racha: ${state.personalBest} ${state.personalBest === 1 ? 'día' : 'días'}.`}
+        hint={
+          grace.kind === 'offer'
+            ? 'Ayer se quedó. Un día de gracia por semana sostiene la racha, sin fingir que leíste.'
+            : grace.kind === 'retomar'
+              ? 'Esta semana ya usaron la gracia. Hoy, al terminar, empiezan de nuevo en 1.'
+              : `Tu mejor racha: ${state.personalBest} ${state.personalBest === 1 ? 'día' : 'días'}. Un día de gracia por semana (lunes–domingo).`
+        }
       />
+      <View style={{ height: space.md }} />
+      <GraceCard offer={grace} friendName={friendName} onUseGrace={useGraceDay} />
       <View style={{ height: space.lg }} />
       <AppText variant="label" tone="amber">
         Últimas dos semanas
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 4, marginBottom: space.sm }}>
-        Cada punto es un día terminado de verdad. Los huecos son días que no se leyeron.
+        Oliva: día leído. Ámbar: día de gracia. Hueco: todavía no se leyó. La gracia no infla el
+        número; solo puentea.
       </AppText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {history.map((day) => {
           const done = state.userCompletedDates.includes(day);
+          const graceDay = state.graceDates.includes(day);
           const isToday = day === today;
           return (
             <View key={day} style={{ alignItems: 'center', width: 28 }}>
@@ -79,7 +95,7 @@ export default function YoScreen() {
                   width: 12,
                   height: 12,
                   borderRadius: 6,
-                  backgroundColor: done ? colors.olive : colors.line,
+                  backgroundColor: done ? colors.olive : graceDay ? colors.amber : colors.line,
                   borderWidth: isToday ? 2 : 0,
                   borderColor: colors.amber,
                 }}
@@ -114,6 +130,14 @@ export default function YoScreen() {
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 6, marginBottom: space.md }}>
         Todo vive en este teléfono. Borrar te lleva otra vez al onboarding.
+      </AppText>
+      <Button
+        label="Probar un día saltado (demo)"
+        variant="olive"
+        onPress={simulateMissedDay}
+      />
+      <AppText variant="caption" tone="soft" style={{ marginTop: 8, marginBottom: space.md }}>
+        Deja ayer sin leer y conserva dos días previos, para ver la gracia o «Retomar juntos».
       </AppText>
       <Button
         label="Empezar de cero en este aparato"

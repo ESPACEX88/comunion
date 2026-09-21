@@ -4,25 +4,30 @@ import {
   EXAMPLE_INVITE_CODE,
   PSALMS_PLAN_ID,
   getPlan,
+  isDuoPlan,
   makeInviteCode,
   newId,
   planDayForDate,
 } from '@/features/plans/content';
-import { SPECIAL_FRIEND_ID, friendCheckInForToday, seedHeartVerses, seedPrayerRequests } from '@/features/duo/seeds';
-import { CHECK_IN_NOTE_MAX, HEART_NOTE_MAX, PRAYER_MAX } from '@/features/duo/moods';
-import { membersWithSelf, mockFriendCompletions } from '@/features/group/mock-members';
+import { SPECIAL_FRIEND_ID, friendCheckInForToday, friendDuoAnswerForToday, seedHeartVerses, seedPrayerRequests } from '@/features/duo/seeds';
+import { CHECK_IN_NOTE_MAX, DUO_ANSWER_MAX, HEART_NOTE_MAX, PRAYER_MAX } from '@/features/duo/moods';
+import { friendReadingDates, membersWithSelf, mockFriendCompletions } from '@/features/group/mock-members';
 import { dataSource } from '@/lib/data-source';
-import { todayKey } from '@/lib/date';
+import { addDays, todayKey, weekStartMonday, yesterday } from '@/lib/date';
 import {
-  consecutiveStreak,
+  consecutiveStreakWithGrace,
   dayStatus,
+  graceOffer,
+  graceUsedThisWeek,
   groupDayProgress,
-  groupStreak,
+  groupStreakWithGrace,
   withDate,
+  type GraceOffer,
 } from '@/lib/streaks';
 import type {
   CheckIn,
   DayStatus,
+  DuoAnswer,
   HeartVerse,
   Member,
   MoodId,
@@ -54,7 +59,7 @@ const defaultDraft: OnboardingDraft = {
 function emptyState(): PersistedState {
   const today = todayKey();
   return {
-    version: 2,
+    version: 3,
     onboardingComplete: false,
     userName: '',
     notificationsEnabled: true,
@@ -75,6 +80,8 @@ function emptyState(): PersistedState {
     checkIns: [],
     prayerRequests: [],
     heartVerses: [],
+    duoAnswers: [],
+    graceDates: [],
   };
 }
 
@@ -94,6 +101,13 @@ type AppContextValue = {
   personalPlan: Plan | null;
   todayGroupReading: PlanDay;
   todayPersonalReading: PlanDay | null;
+  isDuoActive: boolean;
+  grace: GraceOffer;
+  myDuoAnswerToday: DuoAnswer | null;
+  friendDuoAnswerToday: DuoAnswer | null;
+  saveDuoAnswer: (text: string) => void;
+  useGraceDay: () => void;
+  simulateMissedDay: () => void;
   completeOnboarding: () => Promise<void>;
   openReading: () => void;
   completeToday: () => {
@@ -155,7 +169,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersWithSelf(state.userName), [state.userName]);
 
   const friendDates = useMemo(
-    () => withDate(state.userCompletedDates, today),
+    () => friendReadingDates(state.userCompletedDates, today),
     [state.userCompletedDates, today],
   );
 
@@ -167,10 +181,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [friendDates, state.userCompletedDates]);
 
   const memberIds = useMemo(() => members.map((m) => m.id), [members]);
-  const personalStreak = consecutiveStreak(state.userCompletedDates, today);
-  const groupStreakCount = groupStreak(memberIds, completions, today);
+  const personalStreak = consecutiveStreakWithGrace(
+    state.userCompletedDates,
+    today,
+    state.graceDates,
+  );
+  const groupStreakCount = groupStreakWithGrace(memberIds, completions, today, state.graceDates);
   const todayStatus = dayStatus(state.userCompletedDates, state.inProgressDate, today);
   const groupToday = groupDayProgress(memberIds, completions, today);
+  const grace = graceOffer(state.userCompletedDates, state.graceDates, today);
 
   const groupPlan = getPlan(state.groupPlanId) ?? getPlan(PSALMS_PLAN_ID)!;
   const personalPlan = state.personalPlanId ? (getPlan(state.personalPlanId) ?? null) : null;
@@ -187,6 +206,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const friendCheckInToday =
     state.checkIns.find((item) => item.authorId === SPECIAL_FRIEND_ID && item.date === today) ??
     friendCheckInForToday(today);
+
+  const isDuoActive = isDuoPlan(groupPlan) || Boolean(todayGroupReading.prompt);
+  const myDuoAnswerToday =
+    state.duoAnswers.find(
+      (item) =>
+        item.authorId === CURRENT_USER_ID &&
+        item.date === today &&
+        item.planDayId === todayGroupReading.id,
+    ) ?? null;
+  const friendDuoAnswerToday =
+    todayStatus === 'completado' && todayGroupReading.prompt
+      ? (state.duoAnswers.find(
+          (item) =>
+            item.authorId === SPECIAL_FRIEND_ID &&
+            item.date === today &&
+            item.planDayId === todayGroupReading.id,
+        ) ??
+        friendDuoAnswerForToday(today, todayGroupReading.id, todayGroupReading.prompt))
+      : null;
 
   const completeOnboarding = useCallback(async () => {
     const name = draft.name.trim() || 'Amiga';
@@ -235,8 +273,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const completeToday = useCallback(() => {
     const dates = withDate(state.userCompletedDates, today);
     const nextCompletions = { ...mockFriendCompletions(dates), [CURRENT_USER_ID]: dates };
-    const nextPersonal = consecutiveStreak(dates, today);
-    const nextGroup = groupStreak(memberIds, nextCompletions, today);
+    const nextPersonal = consecutiveStreakWithGrace(dates, today, state.graceDates);
+    const nextGroup = groupStreakWithGrace(memberIds, nextCompletions, today, state.graceDates);
     const result = {
       personalStreak: nextPersonal,
       groupStreak: nextGroup,
@@ -245,11 +283,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     setState((prev) => {
       const nextDates = withDate(prev.userCompletedDates, today);
-      const personal = consecutiveStreak(nextDates, today);
-      const group = groupStreak(
+      const personal = consecutiveStreakWithGrace(nextDates, today, prev.graceDates);
+      const group = groupStreakWithGrace(
         memberIds,
         { ...mockFriendCompletions(nextDates), [CURRENT_USER_ID]: nextDates },
         today,
+        prev.graceDates,
       );
       return {
         ...prev,
@@ -261,7 +300,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
 
     return result;
-  }, [groupStreakCount, memberIds, state.userCompletedDates, today]);
+  }, [groupStreakCount, memberIds, state.graceDates, state.userCompletedDates, today]);
 
   const shareVerse = useCallback((reference: string, text: string, note?: string) => {
     const trimmedNote = (note ?? '').trim();
@@ -349,6 +388,68 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const saveDuoAnswer = useCallback(
+    (text: string) => {
+      const clipped = text.trim().slice(0, DUO_ANSWER_MAX);
+      if (!clipped || !todayGroupReading.prompt) return;
+      setState((prev) => {
+        const withoutMine = prev.duoAnswers.filter(
+          (item) =>
+            !(
+              item.authorId === CURRENT_USER_ID &&
+              item.date === today &&
+              item.planDayId === todayGroupReading.id
+            ),
+        );
+        return {
+          ...prev,
+          duoAnswers: [
+            ...withoutMine,
+            {
+              id: newId('duo'),
+              authorId: CURRENT_USER_ID,
+              date: today,
+              planDayId: todayGroupReading.id,
+              question: todayGroupReading.prompt ?? '',
+              text: clipped,
+            },
+          ],
+        };
+      });
+    },
+    [today, todayGroupReading.id, todayGroupReading.prompt],
+  );
+
+  const useGraceDay = useCallback(() => {
+    const gap = yesterday(today);
+    setState((prev) => {
+      if (prev.graceDates.includes(gap)) return prev;
+      return { ...prev, graceDates: [...prev.graceDates, gap] };
+    });
+  }, [today]);
+
+  const simulateMissedDay = useCallback(() => {
+    const y = yesterday(today);
+    const two = addDays(today, -2);
+    const three = addDays(today, -3);
+    const monday = weekStartMonday(y);
+    setState((prev) => {
+      const kept = prev.userCompletedDates.filter((day) => day !== y && day !== today);
+      const usedGraceAlready =
+        prev.graceDates.includes(y) || graceUsedThisWeek(prev.graceDates, y).length > 0;
+      let graceDates = prev.graceDates.filter((day) => day !== y);
+      if (usedGraceAlready && monday !== y && !graceDates.includes(monday)) {
+        graceDates = [...graceDates, monday];
+      }
+      return {
+        ...prev,
+        userCompletedDates: withDate(withDate(kept, two), three),
+        inProgressDate: null,
+        graceDates,
+      };
+    });
+  }, [today]);
+
   const postNote = useCallback((text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -420,6 +521,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     personalPlan,
     todayGroupReading,
     todayPersonalReading,
+    isDuoActive,
+    grace,
+    myDuoAnswerToday,
+    friendDuoAnswerToday,
+    saveDuoAnswer,
+    useGraceDay,
+    simulateMissedDay,
     completeOnboarding,
     openReading,
     completeToday,

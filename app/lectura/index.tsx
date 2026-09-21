@@ -1,11 +1,12 @@
 import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
+import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
-import { isPlanFinished } from '@/features/plans/content';
+import { isDuoPlan, isPlanFinished } from '@/features/plans/content';
 import type { MoodId } from '@/lib/types';
 import { colors, radius, space } from '@/theme';
 import * as Haptics from 'expo-haptics';
@@ -27,8 +28,11 @@ export default function LecturaScreen() {
     completeToday,
     saveCheckIn,
     saveHeartVerse,
+    saveDuoAnswer,
     openReading,
     myCheckInToday,
+    myDuoAnswerToday,
+    friendDuoAnswerToday,
     specialFriend,
   } = useAppState();
 
@@ -47,12 +51,21 @@ export default function LecturaScreen() {
   }, [openReading]);
 
   const alreadyDone = todayStatus === 'completado';
+  const showDuo = kind === 'group' && Boolean(day.prompt);
 
-  const persistSheet = (payload: { mood: MoodId; note: string; heartNote: string }) => {
+  const persistSheet = (payload: {
+    mood: MoodId;
+    note: string;
+    heartNote: string;
+    duoAnswer: string;
+  }) => {
     saveCheckIn(payload.mood, payload.note);
     const wantsMural = Boolean(payload.heartNote.trim());
     if (wantsMural) {
       saveHeartVerse(day.featured.reference, day.featured.text, payload.heartNote);
+    }
+    if (payload.duoAnswer.trim()) {
+      saveDuoAnswer(payload.duoAnswer);
     }
     setSheet(null);
     if (wantsMural) {
@@ -70,6 +83,7 @@ export default function LecturaScreen() {
         </AppText>
       </Pressable>
       <AppText variant="caption" tone="soft" style={{ marginTop: space.md }}>
+        {isDuoPlan(plan) ? 'Plan de a dos · ' : ''}
         {plan.title}
       </AppText>
       <AppText variant="display" style={{ marginTop: 4 }}>
@@ -137,6 +151,18 @@ export default function LecturaScreen() {
           onPress={() => setSheet('quiet')}
         />
       ) : null}
+      {alreadyDone && showDuo && day.prompt ? (
+        <View style={{ marginTop: space.lg }}>
+          <DuoQuestionCard
+            question={day.prompt}
+            unlocked
+            myAnswer={myDuoAnswerToday}
+            friendAnswer={friendDuoAnswerToday}
+            friendName={friendName}
+            onSave={saveDuoAnswer}
+          />
+        </View>
+      ) : null}
       <AfterReadingSheet
         visible={sheet !== null}
         variant={sheet === 'quiet' ? 'quiet' : 'celebrate'}
@@ -145,6 +171,7 @@ export default function LecturaScreen() {
         groupStreak={result.groupStreak}
         friendName={friendName}
         featured={day.featured}
+        question={showDuo && day.prompt && !myDuoAnswerToday ? day.prompt : undefined}
         onSave={persistSheet}
         onSkip={() => setSheet(null)}
       />

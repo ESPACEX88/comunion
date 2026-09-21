@@ -26,10 +26,34 @@ export function yesterday(dayKey: string): string {
   return addDays(dayKey, -1);
 }
 
+/** Lunes de la semana calendario (lunes–domingo) que contiene dayKey. */
+export function weekStartMonday(dayKey: string): string {
+  const date = parseDayKey(dayKey);
+  const weekday = date.getDay();
+  const offset = weekday === 0 ? 6 : weekday - 1;
+  date.setDate(date.getDate() - offset);
+  return toDayKey(date);
+}
+
+export function sameWeek(a: string, b: string): boolean {
+  return weekStartMonday(a) === weekStartMonday(b);
+}
+
 export function calendarDiff(start: string, end: string): number {
   const a = parseDayKey(start).getTime();
   const b = parseDayKey(end).getTime();
   return Math.round((b - a) / 86_400_000);
+}
+
+/** Rango inclusivo de días locales. Corta a 400 por seguridad. */
+export function inclusiveDayRange(start: string, end: string): string[] {
+  if (start > end) return [];
+  const days: string[] = [];
+  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
+    days.push(cursor);
+    if (days.length > 400) break;
+  }
+  return days;
 }
 
 export function lastNDays(today: string, n: number): string[] {

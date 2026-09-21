@@ -3,6 +3,7 @@ import type { MoodId } from '@/lib/types';
 export const CHECK_IN_NOTE_MAX = 140;
 export const HEART_NOTE_MAX = 160;
 export const PRAYER_MAX = 160;
+export const DUO_ANSWER_MAX = 180;
 
 export const MOODS: { id: MoodId; label: string; hint: string }[] = [
   { id: 'paz', label: 'Paz', hint: 'El texto te sosegó' },
