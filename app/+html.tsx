@@ -20,4 +20,9 @@ const background = `
 body {
   background-color: #F3EADA;
 }
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1C1712;
+  }
+}
 `;
