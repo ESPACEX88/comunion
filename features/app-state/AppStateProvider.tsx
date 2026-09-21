@@ -15,6 +15,7 @@ import {
   planDayForDate,
 } from '@/features/plans/content';
 import { dataSource } from '@/lib/data-source';
+import { getSupabase } from '@/lib/supabase';
 import { addDays, todayKey, weekStartMonday, yesterday } from '@/lib/date';
 import {
   consecutiveStreakWithGrace,
@@ -105,6 +106,8 @@ function emptyState(): PersistedState {
 }
 
 let liveWriteChain: Promise<void> = Promise.resolve();
+let lastLiveRefreshAt = 0;
+const REFRESH_GAP_MS = 1200;
 
 function enqueueLiveWrite(task: () => Promise<void>): Promise<void> {
   const run = liveWriteChain.then(task, task);
@@ -165,7 +168,7 @@ type AppContextValue = {
   clearPersonalPlan: () => void;
   switchGroupPlan: (planId: string) => void;
   resetLocalData: () => Promise<void>;
-  refreshLive: () => Promise<void>;
+  refreshLive: (opts?: { force?: boolean }) => Promise<void>;
 };
 
 const AppStateContext = createContext<AppContextValue | null>(null);
@@ -262,7 +265,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const refreshLive = useCallback(() => enqueueLiveWrite(() => refreshLiveNow()), [refreshLiveNow]);
+  const refreshLive = useCallback(
+    (opts?: { force?: boolean }) => {
+      if (!opts?.force && Date.now() - lastLiveRefreshAt < REFRESH_GAP_MS) {
+        return Promise.resolve();
+      }
+      lastLiveRefreshAt = Date.now();
+      return enqueueLiveWrite(() => refreshLiveNow());
+    },
+    [refreshLiveNow],
+  );
 
   useEffect(() => {
     if (!user) {
@@ -271,16 +283,52 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setLiveMembersList(null);
       return;
     }
-    void refreshLive();
+    void refreshLive({ force: true });
   }, [user, refreshLive]);
 
   useEffect(() => {
     if (!live) return;
     const sub = RNAppState.addEventListener('change', (status) => {
-      if (status === 'active') void refreshLive();
+      if (status === 'active') void refreshLive({ force: true });
     });
     return () => sub.remove();
   }, [live, refreshLive]);
+
+  useEffect(() => {
+    if (!user || !state.remoteDuoId) return;
+    const supabase = getSupabase();
+    const duoId = state.remoteDuoId;
+    const planId = state.remotePlanId;
+    const channel = supabase.channel(`duo-live:${duoId}`);
+    let bounce: ReturnType<typeof setTimeout> | null = null;
+    const onRemoteChange = () => {
+      if (bounce) clearTimeout(bounce);
+      bounce = setTimeout(() => {
+        void refreshLive({ force: true });
+      }, 280);
+    };
+    for (const table of ['check_ins', 'prayers', 'heart_verses'] as const) {
+      channel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table, filter: `duo_id=eq.${duoId}` },
+        onRemoteChange,
+      );
+    }
+    if (planId) {
+      for (const table of ['plan_completions', 'plan_answers'] as const) {
+        channel.on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table, filter: `plan_id=eq.${planId}` },
+          onRemoteChange,
+        );
+      }
+    }
+    channel.subscribe();
+    return () => {
+      if (bounce) clearTimeout(bounce);
+      void supabase.removeChannel(channel);
+    };
+  }, [refreshLive, state.remoteDuoId, state.remotePlanId, user]);
 
   const setDraft = useCallback((patch: Partial<OnboardingDraft>) => {
     setDraftState((prev) => ({ ...prev, ...patch }));
