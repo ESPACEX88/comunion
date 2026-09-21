@@ -34,7 +34,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="grupo"
         options={{
-          title: 'Grupo',
+          title: 'Nosotros',
           tabBarIcon: ({ focused }) => <TabMark kind="grupo" focused={focused} />,
         }}
       />
