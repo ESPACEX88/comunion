@@ -2,7 +2,7 @@ import type { MemberHue } from '@/theme';
 
 export type DayStatus = 'pendiente' | 'en_curso' | 'completado';
 
-export type PlanKind = 'group' | 'personal';
+export type PlanKind = 'group' | 'personal' | 'duo';
 
 export interface VerseLine {
   n: number;
@@ -20,6 +20,7 @@ export interface PlanDay {
   title: string;
   reference: string;
   teaser: string;
+  prompt?: string;
   verses: VerseLine[];
   featured: FeaturedVerse;
 }
@@ -60,6 +61,15 @@ export interface PrayerRequest {
   prayedBy: string[];
 }
 
+export interface DuoAnswer {
+  id: string;
+  authorId: string;
+  date: string;
+  planDayId: string;
+  question: string;
+  text: string;
+}
+
 export interface HeartVerse {
   id: string;
   authorId: string;
@@ -84,7 +94,7 @@ export interface GroupInfo {
 }
 
 export interface PersistedState {
-  version: 2;
+  version: 3;
   onboardingComplete: boolean;
   userName: string;
   notificationsEnabled: boolean;
@@ -101,6 +111,8 @@ export interface PersistedState {
   checkIns: CheckIn[];
   prayerRequests: PrayerRequest[];
   heartVerses: HeartVerse[];
+  duoAnswers: DuoAnswer[];
+  graceDates: string[];
 }
 
 export interface OnboardingDraft {

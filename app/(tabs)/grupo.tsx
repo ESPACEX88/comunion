@@ -1,5 +1,7 @@
 import { HeartMural } from '@/components/duo/HeartMural';
 import { CheckInCard } from '@/components/duo/CheckInCard';
+import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
+import { GraceCard } from '@/components/duo/GraceCard';
 import { PrayerList } from '@/components/duo/PrayerList';
 import { MemberRow } from '@/components/group/MemberRow';
 import { StreakMark } from '@/components/streak/StreakMark';
@@ -29,6 +31,14 @@ export default function GrupoScreen() {
     heartVerses,
     addPrayerRequest,
     markPrayed,
+    todayGroupReading,
+    todayStatus,
+    isDuoActive,
+    grace,
+    myDuoAnswerToday,
+    friendDuoAnswerToday,
+    saveDuoAnswer,
+    useGraceDay,
   } = useAppState();
   const [copied, setCopied] = useState(false);
   const [prayer, setPrayer] = useState('');
@@ -47,6 +57,7 @@ export default function GrupoScreen() {
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
         Dentro de {state.group.name}. El dúo es lo íntimo; la mesa, el marco.
+        {isDuoActive ? ' Están en un plan de a dos.' : ''}
       </AppText>
       <Ornament />
       <View style={{ gap: space.sm }}>
@@ -68,11 +79,29 @@ export default function GrupoScreen() {
         label="Racha compartida"
         compact
         hint={
-          groupToday.allDone
-            ? `Hoy cerraron juntas. La racha suma.`
-            : `${groupToday.done} de ${groupToday.total} leyeron hoy en la mesa.`
+          grace.kind === 'offer'
+            ? 'Ayer se quedó. La gracia de esta semana puede sostener la racha de las dos.'
+            : grace.kind === 'retomar'
+              ? 'Esta semana ya usaron la gracia. Hoy, al terminar, retoman juntas en 1.'
+              : groupToday.allDone
+                ? `Hoy cerraron juntas. La racha suma.`
+                : `${groupToday.done} de ${groupToday.total} leyeron hoy en la mesa.`
         }
       />
+      <View style={{ height: space.md }} />
+      <GraceCard offer={grace} friendName={friendName} onUseGrace={useGraceDay} />
+      {isDuoActive && todayGroupReading.prompt ? (
+        <View style={{ marginTop: space.md }}>
+          <DuoQuestionCard
+            question={todayGroupReading.prompt}
+            unlocked={todayStatus === 'completado'}
+            myAnswer={myDuoAnswerToday}
+            friendAnswer={friendDuoAnswerToday}
+            friendName={friendName}
+            onSave={saveDuoAnswer}
+          />
+        </View>
+      ) : null}
       <View style={{ height: space.lg }} />
       <AppText variant="label" tone="amber">
         Oración mutua

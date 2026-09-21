@@ -2,7 +2,7 @@ import { MoodChips } from '@/components/duo/MoodChips';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
-import { CHECK_IN_NOTE_MAX, HEART_NOTE_MAX } from '@/features/duo/moods';
+import { CHECK_IN_NOTE_MAX, DUO_ANSWER_MAX, HEART_NOTE_MAX } from '@/features/duo/moods';
 import type { FeaturedVerse, MoodId } from '@/lib/types';
 import { colors, radius, space } from '@/theme';
 import { useState } from 'react';
@@ -16,7 +16,8 @@ type Props = {
   groupStreak?: number;
   friendName: string;
   featured: FeaturedVerse;
-  onSave: (payload: { mood: MoodId; note: string; heartNote: string }) => void;
+  question?: string;
+  onSave: (payload: { mood: MoodId; note: string; heartNote: string; duoAnswer: string }) => void;
   onSkip: () => void;
 };
 
@@ -28,17 +29,20 @@ export function AfterReadingSheet({
   groupStreak = 0,
   friendName,
   featured,
+  question,
   onSave,
   onSkip,
 }: Props) {
   const [mood, setMood] = useState<MoodId | null>(null);
   const [note, setNote] = useState('');
   const [heartNote, setHeartNote] = useState('');
+  const [duoAnswer, setDuoAnswer] = useState('');
 
   const resetAnd = (fn: () => void) => {
     setMood(null);
     setNote('');
     setHeartNote('');
+    setDuoAnswer('');
     fn();
   };
 
@@ -138,13 +142,41 @@ export function AfterReadingSheet({
                 Si escribís una nota, se guarda en el mural de las dos.
               </AppText>
             </View>
+            {question ? (
+              <View
+                style={{
+                  marginTop: space.md,
+                  paddingTop: space.md,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.line,
+                }}>
+                <AppText variant="label" tone="olive">
+                  Pregunta de a dos
+                </AppText>
+                <AppText variant="ui" style={{ marginTop: 8 }}>
+                  {question}
+                </AppText>
+                <TextInput
+                  value={duoAnswer}
+                  onChangeText={(value) => setDuoAnswer(value.slice(0, DUO_ANSWER_MAX))}
+                  placeholder="Una respuesta corta, para ella y para vos."
+                  placeholderTextColor={colors.oliveSoft}
+                  maxLength={DUO_ANSWER_MAX}
+                  multiline
+                  style={[inputStyle, { marginTop: space.sm }]}
+                />
+                <AppText variant="caption" tone="soft">
+                  {duoAnswer.length}/{DUO_ANSWER_MAX} · opcional
+                </AppText>
+              </View>
+            ) : null}
             <Button
               label="Guardar este momento"
               style={{ marginTop: space.lg }}
               disabled={!mood}
               onPress={() => {
                 if (!mood) return;
-                const payload = { mood, note, heartNote };
+                const payload = { mood, note, heartNote, duoAnswer };
                 resetAnd(() => onSave(payload));
               }}
             />

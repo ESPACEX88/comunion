@@ -1,5 +1,5 @@
 import { Screen } from '@/components/ui/Screen';
-import { ALL_PLANS, JOHN_PLAN, JOHN_PLAN_ID, PSALMS_PLAN_ID } from '@/features/plans/content';
+import { ALL_PLANS, JOHN_PLAN, JOHN_PLAN_ID, PSALMS_PLAN_ID, isDuoPlan, planAudienceLabel } from '@/features/plans/content';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -42,16 +42,21 @@ export default function PlanesScreen() {
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        El plan del grupo es de todos. El personal es el que vos cargás aparte, sin quitarle el día
-        a la mesa.
+        El plan de a dos es el de la mesa íntima: un pasaje y una pregunta para hablar. El personal
+        es el que vos cargás aparte, sin quitarle el día compartido.
       </AppText>
       <View style={{ height: space.lg }} />
       <AppText variant="label" tone="amber">
-        Plan del grupo
+        {isDuoPlan(groupPlan) ? 'Plan de a dos' : 'Plan del grupo'}
       </AppText>
       <View style={{ height: space.sm }} />
       <Card>
-        <AppText variant="subtitle">{groupPlan.title}</AppText>
+        <AppText variant="label" tone="olive">
+          {planAudienceLabel(groupPlan)} · {groupPlan.durationLabel}
+        </AppText>
+        <AppText variant="subtitle" style={{ marginTop: 6 }}>
+          {groupPlan.title}
+        </AppText>
         <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
           {groupPlan.subtitle} · {state.group.name}
         </AppText>
@@ -61,6 +66,11 @@ export default function PlanesScreen() {
         <AppText variant="ui">
           Hoy: {todayGroupReading.reference} — {todayGroupReading.title}
         </AppText>
+        {todayGroupReading.prompt ? (
+          <AppText variant="ui" tone="soft" italic style={{ marginTop: 8 }}>
+            Pregunta de hoy: {todayGroupReading.prompt}
+          </AppText>
+        ) : null}
         <Button
           label="Abrir la lectura de hoy"
           style={{ marginTop: space.md }}
