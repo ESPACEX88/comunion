@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { partnerFirstName } from '@/features/duo/labels';
 import { lastNDays, parseDayKey } from '@/lib/date';
@@ -29,13 +30,14 @@ export default function YoScreen() {
     specialFriend,
     live,
   } = useAppState();
+  const { refreshing, onRefresh } = useDuoSyncControls();
   const { signOut, user } = useAuth();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
   const friendName = partnerFirstName(specialFriend);
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <AppText variant="label" tone="olive">
         Vos
       </AppText>

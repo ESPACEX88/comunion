@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { PRAYER_MAX } from '@/features/duo/moods';
 import { partnerFirstName } from '@/features/duo/labels';
 import { colors, radius, space } from '@/theme';
@@ -42,6 +43,7 @@ export default function GrupoScreen() {
     live,
     selfId,
   } = useAppState();
+  const { refreshing, onRefresh } = useDuoSyncControls();
   const [copied, setCopied] = useState(false);
   const [prayer, setPrayer] = useState('');
   const [justPrayedId, setJustPrayedId] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export default function GrupoScreen() {
   const rest = members.filter((member) => !member.isSelf && !member.isSpecialFriend);
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <AppText variant="label" tone="olive">
         Nosotros
       </AppText>

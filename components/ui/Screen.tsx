@@ -1,5 +1,5 @@
 import { colors, space } from '@/theme';
-import { ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { RefreshControl, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
@@ -7,9 +7,18 @@ type Props = {
   scroll?: boolean;
   padded?: boolean;
   style?: StyleProp<ViewStyle>;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
-export function Screen({ children, scroll = true, padded = true, style }: Props) {
+export function Screen({
+  children,
+  scroll = true,
+  padded = true,
+  style,
+  refreshing,
+  onRefresh,
+}: Props) {
   const insets = useSafeAreaInsets();
   const padding = {
     paddingHorizontal: padded ? space.lg : 0,
@@ -23,7 +32,18 @@ export function Screen({ children, scroll = true, padded = true, style }: Props)
         <ScrollView
           contentContainerStyle={padding}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={Boolean(refreshing)}
+                onRefresh={onRefresh}
+                tintColor={colors.amber}
+                colors={[colors.amber]}
+                progressBackgroundColor={colors.paper}
+              />
+            ) : undefined
+          }>
           {children}
         </ScrollView>
       </View>

@@ -1,6 +1,7 @@
 import { Screen } from '@/components/ui/Screen';
 import { ALL_PLANS, JOHN_PLAN, JOHN_PLAN_ID, PSALMS_PLAN_ID, isDuoPlan, planAudienceLabel } from '@/features/plans/content';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -26,6 +27,7 @@ export default function PlanesScreen() {
     openReading,
     live,
   } = useAppState();
+  const { refreshing, onRefresh } = useDuoSyncControls();
 
   const otherGroupPlan = ALL_PLANS.find((plan) => plan.id !== groupPlan.id);
   const personalElapsed =
@@ -34,7 +36,7 @@ export default function PlanesScreen() {
       : 1;
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <AppText variant="label" tone="olive">
         Planes
       </AppText>

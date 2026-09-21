@@ -10,6 +10,7 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { partnerFirstName } from '@/features/duo/labels';
 import { isDuoPlan } from '@/features/plans/content';
 import { formatLongDate, greeting, yesterday } from '@/lib/date';
@@ -42,6 +43,7 @@ export default function HoyScreen() {
     live,
     syncError,
   } = useAppState();
+  const { refreshing, onRefresh } = useDuoSyncControls();
 
   const self = members.find((member) => member.isSelf) ?? members[0];
   const friendName = partnerFirstName(specialFriend);
@@ -66,7 +68,7 @@ export default function HoyScreen() {
             : 'Hoy cuenta cuando terminés el pasaje, no antes.';
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <AppText variant="label" tone="olive">
         {greeting()}
       </AppText>
