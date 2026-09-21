@@ -1,3 +1,5 @@
+import { CheckInCard } from '@/components/duo/CheckInCard';
+import { CheckInComposer } from '@/components/duo/CheckInComposer';
 import { ReadingCard } from '@/components/reading/ReadingCard';
 import { StreakMark } from '@/components/streak/StreakMark';
 import { AppText } from '@/components/ui/AppText';
@@ -22,8 +24,15 @@ export default function HoyScreen() {
     groupToday,
     groupStreakCount,
     openReading,
+    myCheckInToday,
+    friendCheckInToday,
+    specialFriend,
+    saveCheckIn,
+    members,
   } = useAppState();
 
+  const self = members.find((member) => member.isSelf) ?? members[0];
+  const friendName = specialFriend.name.split(' ')[0] ?? 'Ana';
   const cta =
     todayStatus === 'completado'
       ? 'Volver a leer el pasaje'
@@ -64,22 +73,52 @@ export default function HoyScreen() {
           router.push({ pathname: '/lectura', params: { plan: 'group' } });
         }}
       />
+      <View style={{ height: space.lg }} />
+      <AppText variant="label" tone="amber">
+        Check-in espiritual
+      </AppText>
+      <View style={{ height: space.sm }} />
+      {todayStatus !== 'completado' ? (
+        <Card accent="none">
+          <AppText variant="subtitle">Primero el pasaje.</AppText>
+          <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+            El check-in se abre cuando terminás la lectura de hoy. No hay atajo: el texto, y después
+            cómo te encontró.
+          </AppText>
+        </Card>
+      ) : myCheckInToday ? (
+        <CheckInCard checkIn={myCheckInToday} member={self} />
+      ) : (
+        <Card>
+          <AppText variant="subtitle">Todavía no dejaste cómo te encontró.</AppText>
+          <AppText variant="ui" tone="soft" style={{ marginTop: 6, marginBottom: space.md }}>
+            Un ánimo, y si querés una línea. {friendName} va a verlo en Nosotros.
+          </AppText>
+          <CheckInComposer onSave={saveCheckIn} />
+        </Card>
+      )}
+      <View style={{ height: space.md }} />
+      <CheckInCard
+        checkIn={friendCheckInToday}
+        member={specialFriend}
+        kicker={`${friendName} hoy`}
+      />
       <View style={{ height: space.md }} />
       <Pressable onPress={() => router.push('/(tabs)/grupo')}>
         <Card accent="olive">
           <AppText variant="label" tone="olive">
-            El grupo
+            Nosotros
           </AppText>
           <AppText variant="subtitle" style={{ marginTop: 6 }}>
             {groupToday.allDone
-              ? `Hoy leyeron todos · racha ${groupStreakCount}`
+              ? `Hoy leyeron juntas · racha ${groupStreakCount}`
               : `${groupToday.done} de ${groupToday.total} leyeron hoy`}
           </AppText>
           <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
-            {state.group.name} · tocá para ver quién falta y el hilo.
+            Oración mutua y el mural con {friendName}, dentro de {state.group.name}.
           </AppText>
           <AppText variant="label" tone="amber" style={{ marginTop: 12, color: colors.amberDeep }}>
-            Ir al grupo →
+            Ora y mirá el mural →
           </AppText>
         </Card>
       </Pressable>

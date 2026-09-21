@@ -2,7 +2,7 @@ import { CURRENT_USER_ID } from '@/features/plans/content';
 import type { Member } from '@/lib/types';
 
 export const MOCK_FRIENDS: Member[] = [
-  { id: 'ana', name: 'Ana Morales', hue: 'olive' },
+  { id: 'ana', name: 'Ana Morales', hue: 'olive', isSpecialFriend: true },
   { id: 'mateo', name: 'Mateo Ruiz', hue: 'terracotta' },
   { id: 'lucia', name: 'Lucía Méndez', hue: 'charcoal' },
 ];

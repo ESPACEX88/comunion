@@ -21,8 +21,9 @@ export default function OnboardingGroup() {
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        Creá un grupo para compartir la racha, o unite con un código. En esta versión los amigos son
-        de ejemplo: Ana, Mateo y Lucía ya están en la mesa.
+        Esta mesa es para leer con alguien cercano. En el mock, Ana es tu amiga especial: el dúo
+        (check-in, oración, versículos del corazón) vive dentro del grupo. Mateo y Lucía acompañan
+        la mesa.
       </AppText>
       <View style={{ height: space.lg }} />
       <View style={{ flexDirection: 'row', gap: space.sm }}>

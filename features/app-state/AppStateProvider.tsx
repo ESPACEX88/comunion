@@ -8,6 +8,8 @@ import {
   newId,
   planDayForDate,
 } from '@/features/plans/content';
+import { SPECIAL_FRIEND_ID, friendCheckInForToday, seedHeartVerses, seedPrayerRequests } from '@/features/duo/seeds';
+import { CHECK_IN_NOTE_MAX, HEART_NOTE_MAX, PRAYER_MAX } from '@/features/duo/moods';
 import { membersWithSelf, mockFriendCompletions } from '@/features/group/mock-members';
 import { dataSource } from '@/lib/data-source';
 import { todayKey } from '@/lib/date';
@@ -19,13 +21,17 @@ import {
   withDate,
 } from '@/lib/streaks';
 import type {
+  CheckIn,
   DayStatus,
+  HeartVerse,
   Member,
+  MoodId,
   OnboardingDraft,
   PersistedState,
   Plan,
   PlanDay,
   PlanKind,
+  PrayerRequest,
 } from '@/lib/types';
 import {
   createContext,
@@ -48,7 +54,7 @@ const defaultDraft: OnboardingDraft = {
 function emptyState(): PersistedState {
   const today = todayKey();
   return {
-    version: 1,
+    version: 2,
     onboardingComplete: false,
     userName: '',
     notificationsEnabled: true,
@@ -66,6 +72,9 @@ function emptyState(): PersistedState {
     personalBest: 0,
     groupBest: 0,
     thread: [],
+    checkIns: [],
+    prayerRequests: [],
+    heartVerses: [],
   };
 }
 
@@ -92,8 +101,17 @@ type AppContextValue = {
     groupStreak: number;
     groupJustUnlocked: boolean;
   };
-  shareVerse: (reference: string, text: string) => void;
+  shareVerse: (reference: string, text: string, note?: string) => void;
   postNote: (text: string) => void;
+  saveCheckIn: (mood: MoodId, note: string) => void;
+  saveHeartVerse: (reference: string, text: string, note: string) => void;
+  addPrayerRequest: (text: string) => void;
+  markPrayed: (requestId: string) => void;
+  specialFriend: Member;
+  myCheckInToday: CheckIn | null;
+  friendCheckInToday: CheckIn;
+  prayerRequests: PrayerRequest[];
+  heartVerses: HeartVerse[];
   setNotifications: (value: boolean) => void;
   setUserName: (name: string) => void;
   startPersonalPlan: (planId: string) => void;
@@ -162,6 +180,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ? planDayForDate(personalPlan, state.personalPlanStartDate, today)
       : null;
 
+  const specialFriend =
+    members.find((member) => member.id === SPECIAL_FRIEND_ID) ?? members[1] ?? members[0];
+  const myCheckInToday =
+    state.checkIns.find((item) => item.authorId === CURRENT_USER_ID && item.date === today) ?? null;
+  const friendCheckInToday =
+    state.checkIns.find((item) => item.authorId === SPECIAL_FRIEND_ID && item.date === today) ??
+    friendCheckInForToday(today);
+
   const completeOnboarding = useCallback(async () => {
     const name = draft.name.trim() || 'Amiga';
     const joined =
@@ -191,6 +217,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       groupPlanStartDate: todayKey(),
       personalPlanId: null,
       personalPlanStartDate: null,
+      prayerRequests: seedPrayerRequests(),
+      heartVerses: seedHeartVerses(),
     };
 
     setState(next);
@@ -235,19 +263,89 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return result;
   }, [groupStreakCount, memberIds, state.userCompletedDates, today]);
 
-  const shareVerse = useCallback((reference: string, text: string) => {
+  const shareVerse = useCallback((reference: string, text: string, note?: string) => {
+    const trimmedNote = (note ?? '').trim();
     setState((prev) => ({
       ...prev,
+      heartVerses: [
+        ...prev.heartVerses,
+        {
+          id: newId('heart'),
+          authorId: CURRENT_USER_ID,
+          reference,
+          text,
+          note: trimmedNote.slice(0, HEART_NOTE_MAX),
+          createdAt: new Date().toISOString(),
+        },
+      ],
       thread: [
         ...prev.thread,
         {
           id: newId('msg'),
           authorId: CURRENT_USER_ID,
-          text: `${text}\n— ${reference}`,
+          text: trimmedNote ? `${text}\n— ${reference}\n${trimmedNote}` : `${text}\n— ${reference}`,
           verseRef: reference,
           createdAt: new Date().toISOString(),
         },
       ],
+    }));
+  }, []);
+
+  const saveCheckIn = useCallback(
+    (mood: MoodId, note: string) => {
+      const clipped = note.trim().slice(0, CHECK_IN_NOTE_MAX);
+      setState((prev) => {
+        const withoutMine = prev.checkIns.filter(
+          (item) => !(item.authorId === CURRENT_USER_ID && item.date === today),
+        );
+        return {
+          ...prev,
+          checkIns: [
+            ...withoutMine,
+            {
+              id: newId('checkin'),
+              authorId: CURRENT_USER_ID,
+              date: today,
+              mood,
+              note: clipped,
+            },
+          ],
+        };
+      });
+    },
+    [today],
+  );
+
+  const saveHeartVerse = useCallback((reference: string, text: string, note: string) => {
+    shareVerse(reference, text, note);
+  }, [shareVerse]);
+
+  const addPrayerRequest = useCallback((text: string) => {
+    const clipped = text.trim().slice(0, PRAYER_MAX);
+    if (!clipped) return;
+    setState((prev) => ({
+      ...prev,
+      prayerRequests: [
+        {
+          id: newId('prayer'),
+          authorId: CURRENT_USER_ID,
+          text: clipped,
+          createdAt: new Date().toISOString(),
+          prayedBy: [],
+        },
+        ...prev.prayerRequests,
+      ],
+    }));
+  }, []);
+
+  const markPrayed = useCallback((requestId: string) => {
+    setState((prev) => ({
+      ...prev,
+      prayerRequests: prev.prayerRequests.map((request) =>
+        request.id === requestId && !request.prayedBy.includes(CURRENT_USER_ID)
+          ? { ...request, prayedBy: [...request.prayedBy, CURRENT_USER_ID] }
+          : request,
+      ),
     }));
   }, []);
 
@@ -327,6 +425,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     completeToday,
     shareVerse,
     postNote,
+    saveCheckIn,
+    saveHeartVerse,
+    addPrayerRequest,
+    markPrayed,
+    specialFriend,
+    myCheckInToday,
+    friendCheckInToday,
+    prayerRequests: state.prayerRequests,
+    heartVerses: state.heartVerses,
     setNotifications,
     setUserName,
     startPersonalPlan,
