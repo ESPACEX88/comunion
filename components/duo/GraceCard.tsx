@@ -34,14 +34,14 @@ export function GraceCard({ offer, friendName, onUseGrace }: Props) {
   return (
     <Card accent="none">
       <AppText variant="label" tone="amber">
-        Retomar juntos
+        Sin culpa
       </AppText>
       <AppText variant="subtitle" style={{ marginTop: 6 }}>
-        Esta semana ya usaron la gracia. Está bien.
+        Retomar juntos
       </AppText>
       <AppText variant="body" tone="soft" style={{ marginTop: 8 }}>
-        No hay que recuperar el hueco. Cuando termines la lectura de hoy, la racha empieza de nuevo
-        en 1 —sin culpa, con {friendName} al lado.
+        Esta semana ya usaron la gracia. Está bien. No hay que recuperar el hueco. Cuando termines
+        la lectura de hoy, la racha empieza de nuevo en 1 —con {friendName} al lado.
       </AppText>
     </Card>
   );
