@@ -18,7 +18,7 @@ import {
 } from '@/features/plans/content';
 import { dataSource } from '@/lib/data-source';
 import { getSupabase } from '@/lib/supabase';
-import { addDays, todayKey, weekStartMonday, yesterday } from '@/lib/date';
+import { addDays, asDayKey, todayKey, weekStartMonday, yesterday } from '@/lib/date';
 import {
   consecutiveStreakWithGrace,
   dayStatus,
@@ -269,7 +269,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const personalPatch = {
         remotePersonalPlanId: personalRow?.id ?? null,
         personalPlanId: SOLO_PSALMS_PLAN_ID,
-        personalPlanStartDate: personalRow?.startsOn ?? todayKey(),
+        personalPlanStartDate: asDayKey(personalRow?.startsOn ?? todayKey()),
         personalCompletedDates: personalCompletions.map((row) => row.completedOn),
         journalEntries: journal,
       };
@@ -522,6 +522,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       onboardingComplete: true,
       duoEnabled: true,
       userName: name,
+      userId: `local-${newId()}`,
       group: {
         id: 'grupo-local',
         name: groupName,
@@ -567,6 +568,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       onboardingComplete: true,
       duoEnabled: false,
       userName: name,
+      userId: `local-${newId()}`,
       personalPlanId: SOLO_PSALMS_PLAN_ID,
       personalPlanStartDate: todayKey(),
     };
@@ -588,7 +590,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       personalPlanId: prev.personalPlanId ?? SOLO_PSALMS_PLAN_ID,
-      personalPlanStartDate: prev.personalPlanStartDate ?? todayKey(),
+      personalPlanStartDate: asDayKey(prev.personalPlanStartDate ?? todayKey()),
     }));
   }, [refreshLiveNow, user]);
 

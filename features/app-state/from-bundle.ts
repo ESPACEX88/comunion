@@ -1,5 +1,6 @@
 import { asMood } from '@/features/duo/moods';
 import { PSALMS_PLAN, PSALMS_PLAN_ID, SOLO_PSALMS_PLAN, getPlan } from '@/features/plans/content';
+import { asDayKey } from '@/lib/date';
 import type { DuoBundle, RemotePersonalDay, RemotePersonalPlan } from '@/lib/supabase-api';
 import type { CheckIn, DuoAnswer, HeartVerse, PersistedState, Plan, PrayerRequest } from '@/lib/types';
 
@@ -117,7 +118,7 @@ export function bundleToState(prev: PersistedState, bundle: DuoBundle, userId: s
       inviteCode: bundle.duo.inviteCode,
     },
     groupPlanId: PSALMS_PLAN_ID,
-    groupPlanStartDate: bundle.plan?.startsOn ?? prev.groupPlanStartDate,
+    groupPlanStartDate: asDayKey(bundle.plan?.startsOn ?? prev.groupPlanStartDate),
     userCompletedDates: myDates,
     graceDates,
     checkIns,

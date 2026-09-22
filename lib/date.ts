@@ -22,6 +22,15 @@ export function todayKey(now = new Date()): string {
   return toDayKeyInZone(now, APP_TIMEZONE);
 }
 
+/** Normaliza `2026-09-21` o un ISO a dayKey. Prefiere el YYYY-MM-DD del string. */
+export function asDayKey(value: string): string {
+  const match = value.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) return match[1];
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) return toDayKeyInZone(parsed);
+  return todayKey();
+}
+
 /** Día del año 0–365 a partir de un dayKey (1 de enero = 0). */
 export function dayOfYearIndex(dayKey: string): number {
   const date = parseDayKey(dayKey);

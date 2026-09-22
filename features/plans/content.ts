@@ -1,4 +1,4 @@
-import { calendarDiff } from '@/lib/date';
+import { asDayKey, calendarDiff } from '@/lib/date';
 import type { Plan, PlanDay } from '@/lib/types';
 
 export const PSALMS_PLAN_ID = 'salmos-camino';
@@ -284,13 +284,15 @@ export function planAudienceLabel(plan: Plan): string {
 }
 
 export function planDayForDate(plan: Plan, startDate: string, today: string): PlanDay {
-  const diff = calendarDiff(startDate, today);
+  const start = asDayKey(startDate);
+  const day = asDayKey(today);
+  const diff = calendarDiff(start, day);
   const index = Math.min(Math.max(diff, 0), plan.days.length - 1);
   return plan.days[index];
 }
 
 export function isPlanFinished(plan: Plan, startDate: string, today: string): boolean {
-  return calendarDiff(startDate, today) >= plan.days.length;
+  return calendarDiff(asDayKey(startDate), asDayKey(today)) >= plan.days.length;
 }
 
 export function makeInviteCode(name: string): string {
