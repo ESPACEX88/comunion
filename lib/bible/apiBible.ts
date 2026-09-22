@@ -1,3 +1,4 @@
+import { bibleGetJson } from './http';
 import {
   loadBibleCatalog,
   loadBooks,
@@ -10,29 +11,13 @@ import {
   savePassage,
   saveSelectedBible,
 } from './cache';
+import { BibleApiError, MissingBibleKeyError } from './errors';
 import { versesFromContent, sliceVerses } from './parseContent';
 import { isWholeChapter, parseScriptureRef, passageIdFromRef } from './parseRef';
 import { friendlyBibleName, pickPreferredSpanishBible, rankSpanishBibles } from './pickBible';
 import type { BibleBook, BibleChapterMeta, BiblePassage, BibleSummary, SelectedBible } from './types';
 
-const BASE = 'https://api.scripture.api.bible/v1';
-
-export class MissingBibleKeyError extends Error {
-  constructor() {
-    super('Falta configurar API.Bible');
-    this.name = 'MissingBibleKeyError';
-  }
-}
-
-export class BibleApiError extends Error {
-  constructor(
-    message: string,
-    readonly status?: number,
-  ) {
-    super(message);
-    this.name = 'BibleApiError';
-  }
-}
+export { BibleApiError, MissingBibleKeyError } from './errors';
 
 export function apiBibleKey(): string {
   return (process.env.EXPO_PUBLIC_API_BIBLE_KEY ?? '').trim();
@@ -42,31 +27,8 @@ export function hasApiBibleKey(): boolean {
   return apiBibleKey().length > 0;
 }
 
-type Envelope<T> = { data: T };
-
 async function bibleGet<T>(path: string, query?: Record<string, string>): Promise<T> {
-  const key = apiBibleKey();
-  if (!key) throw new MissingBibleKeyError();
-  const url = new URL(`${BASE}${path}`);
-  if (query) {
-    Object.entries(query).forEach(([name, value]) => {
-      if (value) url.searchParams.set(name, value);
-    });
-  }
-  const response = await fetch(url.toString(), {
-    headers: {
-      accept: 'application/json',
-      'api-key': key,
-    },
-  });
-  if (response.status === 401 || response.status === 403) {
-    throw new BibleApiError('La clave de API.Bible no alcanzó. Revisá EXPO_PUBLIC_API_BIBLE_KEY.', response.status);
-  }
-  if (!response.ok) {
-    throw new BibleApiError(`API.Bible respondió ${response.status}.`, response.status);
-  }
-  const body = (await response.json()) as Envelope<T>;
-  return body.data;
+  return bibleGetJson<T>(path, query);
 }
 
 const CONTENT_QUERY = {
@@ -101,7 +63,11 @@ export async function listSpanishBibles(): Promise<BibleSummary[]> {
     list = [];
   }
   if (list.length === 0) {
-    list = await listBibles();
+    try {
+      list = await listBibles();
+    } catch {
+      list = [];
+    }
   }
   const ranked = rankSpanishBibles(list);
   if (ranked.length > 0) {

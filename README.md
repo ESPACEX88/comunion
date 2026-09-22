@@ -148,6 +148,8 @@ npm run update:preview
 
 Al primer uso la app lista `/bibles`, elige una española open/public domain (prioriza Reina Valera 1909) y guarda el `bibleId` en AsyncStorage. En **Biblia → Versión** se puede cambiar de edición; la caché va por `bibleId` (no se mezcla el texto). Hay buscador de libros (nombre o abreviatura). Los capítulos ya vistos quedan en el teléfono. Sin key: «Falta configurar API.Bible», sin crash; el plan muestra el extracto.
 
+El texto **no** se pide con el `fetch` nativo de Expo (en iPhone/Expo Go puede fallar el TLS hacia `api.scripture.api.bible`). Va por la Edge Function `bible` de Supabase (`zpjrfxbrfdapoufdvrqr`) y, si hace falta, por XMLHttpRequest. Secret del servidor: **`API_BIBLE_KEY`** en Supabase → Project Settings → Edge Functions → Secrets (la misma key de scripture.api.bible). Si todavía no está, la función acepta `x-bible-key` desde `EXPO_PUBLIC_API_BIBLE_KEY` del update. Si el texto no llega: mensaje suave y **Reintentar**, nunca el stack/TLS.
+
 En **Hoy** hay **tu versículo** (calendario local + semilla de tu cuenta; el texto es de la edición activa). El dúo ve **versículo de los dos** en Nosotros (mismo dayKey Guatemala para las dos). Tocá el bloque para abrir el pasaje en el lector.
 
 Entradas: **Hoy → Biblia** y **Yo → Leer la Biblia**. Tocá la referencia del plan para abrir el pasaje completo.

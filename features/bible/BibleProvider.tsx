@@ -1,5 +1,4 @@
 import {
-  BibleApiError,
   MissingBibleKeyError,
   ensurePreferredBible,
   getChapter,
@@ -10,6 +9,7 @@ import {
   listSpanishBibles,
   selectBibleEdition,
 } from '@/lib/bible/apiBible';
+import { friendlyBibleLoadError } from '@/lib/bible/errors';
 import type { BibleBook, BibleChapterMeta, BiblePassage, BibleSummary, SelectedBible } from '@/lib/bible/types';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -31,16 +31,7 @@ type BibleContextValue = {
 const BibleContext = createContext<BibleContextValue | null>(null);
 
 function friendlyError(error: unknown): string {
-  if (error instanceof MissingBibleKeyError) {
-    return 'Falta configurar API.Bible';
-  }
-  if (error instanceof BibleApiError) {
-    return error.message;
-  }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return 'No se pudo abrir la Biblia ahora.';
+  return friendlyBibleLoadError(error);
 }
 
 export function BibleProvider({ children }: { children: ReactNode }) {
@@ -59,11 +50,12 @@ export function BibleProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const [selected, catalog] = await Promise.all([ensurePreferredBible(), listSpanishBibles()]);
-      const nextBooks = await listBooks(selected.id);
+      const selected = await ensurePreferredBible();
       setBible(selected);
-      setEditions(catalog);
-      setBooks(nextBooks);
+      const catalog = await listSpanishBibles().catch(() => [] as BibleSummary[]);
+      if (catalog.length > 0) setEditions(catalog);
+      const nextBooks = await listBooks(selected.id).catch(() => [] as BibleBook[]);
+      if (nextBooks.length > 0) setBooks(nextBooks);
       setError(null);
     } catch (caught) {
       setError(friendlyError(caught));

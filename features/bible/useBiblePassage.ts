@@ -1,6 +1,7 @@
 import { MissingBibleKeyError } from '@/lib/bible/apiBible';
+import { friendlyBibleLoadError } from '@/lib/bible/errors';
 import type { BiblePassage } from '@/lib/bible/types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useBible } from './BibleProvider';
 
 export function useBiblePassage(reference?: string | null) {
@@ -8,6 +9,8 @@ export function useBiblePassage(reference?: string | null) {
   const [passage, setPassage] = useState<BiblePassage | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+  const retry = useCallback(() => setTick((value) => value + 1), []);
 
   useEffect(() => {
     if (!reference) {
@@ -32,10 +35,8 @@ export function useBiblePassage(reference?: string | null) {
         if (cancelled) return;
         if (caught instanceof MissingBibleKeyError) {
           setError('Falta configurar API.Bible');
-        } else if (caught instanceof Error) {
-          setError(caught.message);
         } else {
-          setError('No se pudo abrir el pasaje.');
+          setError(friendlyBibleLoadError(caught));
         }
         setPassage(null);
       })
@@ -45,7 +46,7 @@ export function useBiblePassage(reference?: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [reference, missingKey, ready, loadRef, bible?.id]);
+  }, [reference, missingKey, ready, loadRef, bible?.id, tick]);
 
-  return { passage, loading, error, missingKey };
+  return { passage, loading, error, missingKey, retry };
 }

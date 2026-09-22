@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useBible } from '@/features/bible/BibleProvider';
+import { friendlyBibleLoadError } from '@/lib/bible/errors';
 import type { BibleChapterMeta } from '@/lib/bible/types';
 import { radius, space, useTheme } from '@/theme';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -20,6 +21,7 @@ export default function BibliaBookScreen() {
   const [chapters, setChapters] = useState<BibleChapterMeta[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!bookId || missingKey || !ready || !bible) {
@@ -37,7 +39,7 @@ export default function BibliaBookScreen() {
       })
       .catch((caught) => {
         if (!cancelled) {
-          setError(caught instanceof Error ? caught.message : 'No se pudieron cargar los capítulos.');
+          setError(friendlyBibleLoadError(caught));
         }
       })
       .finally(() => {
@@ -46,7 +48,7 @@ export default function BibliaBookScreen() {
     return () => {
       cancelled = true;
     };
-  }, [bookId, missingKey, ready, bible, loadChapters]);
+  }, [bookId, missingKey, ready, bible, loadChapters, tick]);
 
   return (
     <Screen>
@@ -74,7 +76,9 @@ export default function BibliaBookScreen() {
           <EmptyState
             kicker="Capítulos"
             title={error}
-            body="Si ya lo leíste en esta versión, puede estar guardado."
+            body="La referencia se queda. Probá de nuevo cuando la red responda."
+            actionLabel="Reintentar"
+            onAction={() => setTick((value) => value + 1)}
           />
         </View>
       ) : (
