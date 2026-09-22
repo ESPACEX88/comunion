@@ -146,9 +146,11 @@ npm run update:preview
 # o GitHub → Actions → eas-update-preview → Run workflow
 ```
 
-Al primer uso la app lista `/bibles`, elige una española open/public domain (prioriza Reina Valera 1909) y guarda el `bibleId` en AsyncStorage. Los capítulos ya vistos se cachean para no gastar las 5k calls/mes y para leerlos offline. Sin key: «Falta configurar API.Bible», sin crash; el plan muestra el extracto.
+Al primer uso la app lista `/bibles`, elige una española open/public domain (prioriza Reina Valera 1909) y guarda el `bibleId` en AsyncStorage. En **Biblia → Versión** se puede cambiar de edición; la caché va por `bibleId` (no se mezcla el texto). Hay buscador de libros (nombre o abreviatura). Los capítulos ya vistos quedan en el teléfono. Sin key: «Falta configurar API.Bible», sin crash; el plan muestra el extracto.
 
 Entradas: **Hoy → Biblia** y **Yo → Leer la Biblia**. Tocá la referencia del día para abrir el pasaje completo.
+
+Si cambiaste código: lanzá un **Run workflow nuevo** de `eas-update-preview` (no re-run del viejo) y abrí el update más reciente en Expo Go.
 
 ## Mapa de pantallas
 
@@ -163,7 +165,8 @@ Entradas: **Hoy → Biblia** y **Yo → Leer la Biblia**. Tocá la referencia de
 | `/(tabs)` **Planes** | Plan activo de a dos (sembrado en Supabase) |
 | `/(tabs)` **Yo** | Perfil, recordatorios, historial, cerrar sesión |
 | `/recordatorios` | Avisos locales: Tu momento (mañana) y Juntos (si hay dúo) |
-| `/biblia` | Lector: libros → capítulos → texto completo (API.Bible) |
+| `/biblia` | Lector: versión, buscador, libros → capítulos → texto (API.Bible) |
+| `/biblia/versiones` | Selector de edición española |
 | `/biblia/leer` | Capítulo o pasaje del plan (`?ref=Salmo 23`) |
 
 Flujo con nube: instalar → `.env` → registro de José → crear dúo → compartir código → Ana se registra y se une → check-in / oración / versículo / día del plan se ven en las dos cuentas (RLS: cada una solo ve su dúo).

@@ -7,7 +7,7 @@ function blob(bible: BibleSummary): string {
     .toLowerCase();
 }
 
-function isSpanish(bible: BibleSummary): boolean {
+export function isSpanish(bible: BibleSummary): boolean {
   const id = bible.language?.id?.toLowerCase() ?? '';
   const name = `${bible.language?.name ?? ''} ${bible.language?.nameLocal ?? ''}`.toLowerCase();
   return id === 'spa' || id === 'es' || name.includes('spanish') || name.includes('español');
@@ -29,10 +29,32 @@ export function scoreSpanishBible(bible: BibleSummary): number {
 }
 
 export function pickPreferredSpanishBible(bibles: BibleSummary[]): BibleSummary | null {
-  const ranked = [...bibles].sort((a, b) => scoreSpanishBible(b) - scoreSpanishBible(a));
+  const ranked = rankSpanishBibles(bibles);
   const best = ranked[0];
   if (!best || scoreSpanishBible(best) < 40) {
     return ranked.find((bible) => isSpanish(bible)) ?? best ?? null;
   }
   return best;
+}
+
+export function rankSpanishBibles(bibles: BibleSummary[]): BibleSummary[] {
+  return [...bibles]
+    .filter((bible) => isSpanish(bible) || scoreSpanishBible(bible) >= 40)
+    .sort((a, b) => scoreSpanishBible(b) - scoreSpanishBible(a));
+}
+
+export function friendlyBibleName(bible: { name: string; nameLocal?: string }): string {
+  const raw = (bible.nameLocal || bible.name || '').replace(/\s+/g, ' ').trim();
+  return raw
+    .replace(/\s*\((?:text|usx|json|audio|complete|full)[^)]*\)/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+export function friendlyBibleShort(bible: { name: string; nameLocal?: string; abbreviation?: string }): string {
+  const abbr = bible.abbreviation?.trim();
+  if (abbr && abbr.length <= 12) return abbr;
+  const name = friendlyBibleName(bible);
+  if (/1909/.test(name) && /reina/i.test(name)) return 'RVR1909';
+  return name.length > 28 ? `${name.slice(0, 26).trim()}…` : name;
 }

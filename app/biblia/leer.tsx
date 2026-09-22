@@ -1,8 +1,10 @@
+import { BibleWarm } from '@/components/bible/BibleWarm';
 import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
 import { VerseList } from '@/components/bible/VerseList';
 import { BackLink } from '@/components/ui/BackLink';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useBible } from '@/features/bible/BibleProvider';
 import { useBiblePassage } from '@/features/bible/useBiblePassage';
@@ -56,44 +58,38 @@ export default function BibliaLeerScreen() {
       <AppText variant="label" tone="olive" style={{ marginTop: space.lg }}>
         {bible?.abbreviation || 'Biblia'}
       </AppText>
-      <AppText variant="display" style={{ marginTop: 4 }}>
+      <AppText variant="display" style={{ marginTop: 8 }}>
         {heading}
       </AppText>
       {bible ? (
-        <AppText variant="caption" tone="soft" style={{ marginTop: 6 }}>
+        <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
           {bible.name}
         </AppText>
       ) : null}
+      <Ornament />
 
       {missingKey ? (
-        <View style={{ marginTop: space.xl }}>
-          <MissingBibleKey />
-        </View>
+        <MissingBibleKey />
       ) : loading ? (
-        <AppText variant="ui" tone="soft" style={{ marginTop: space.xl }}>
-          Trayendo el texto…
-        </AppText>
+        <BibleWarm title="Trayendo el texto…" body="La primera vez viaja. Después queda en este teléfono." />
       ) : error ? (
-        <View style={{ marginTop: space.xl }}>
-          <EmptyState kicker="Pasaje" title={error} body="Si ya lo leíste, puede estar guardado en este teléfono." />
-        </View>
+        <EmptyState
+          kicker="Pasaje"
+          title={error}
+          body="Si ya lo leíste en esta versión, puede estar guardado acá."
+        />
       ) : passage && passage.verses.length > 0 ? (
-        <View style={{ marginTop: space.xl }}>
+        <View>
           <VerseList verses={passage.verses} />
-          {passage.copyright || bible?.copyright ? (
-            <AppText variant="caption" tone="soft" style={{ marginTop: space.md }}>
-              {passage.copyright || bible?.copyright}
-            </AppText>
-          ) : (
-            <AppText variant="caption" tone="soft" style={{ marginTop: space.md }}>
-              Texto vía API.Bible. Uso no comercial.
-            </AppText>
-          )}
+          <AppText variant="caption" tone="soft" style={{ marginTop: space.lg }}>
+            {passage.copyright || bible?.copyright || 'Texto vía API.Bible. Uso no comercial.'}
+          </AppText>
+          <AppText variant="caption" tone="soft" style={{ marginTop: space.sm }}>
+            Este capítulo queda en el teléfono, en esta edición.
+          </AppText>
         </View>
       ) : (
-        <View style={{ marginTop: space.xl }}>
-          <EmptyState kicker="Vacío" title="Este pasaje no trajo versículos." body="Probá otro capítulo o revisá la clave." />
-        </View>
+        <EmptyState kicker="Vacío" title="Este pasaje no trajo versículos." body="Probá otro capítulo o revisá la clave." />
       )}
     </Screen>
   );

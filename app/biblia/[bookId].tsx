@@ -1,7 +1,9 @@
+import { BibleWarm } from '@/components/bible/BibleWarm';
 import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
 import { BackLink } from '@/components/ui/BackLink';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useBible } from '@/features/bible/BibleProvider';
 import type { BibleChapterMeta } from '@/lib/bible/types';
@@ -50,13 +52,15 @@ export default function BibliaBookScreen() {
     <Screen>
       <BackLink label="Libros" />
       <AppText variant="label" tone="olive" style={{ marginTop: space.lg }}>
-        {book?.abbreviation ?? bookId}
+        {bible?.abbreviation || 'Biblia'}
+        {book?.abbreviation ? ` · ${book.abbreviation}` : ''}
       </AppText>
-      <AppText variant="title" style={{ marginTop: 8 }}>
+      <AppText variant="display" style={{ marginTop: 8 }}>
         {book?.name ?? 'Libro'}
       </AppText>
-      <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
-        Elegí un capítulo.
+      <Ornament />
+      <AppText variant="body" tone="soft">
+        Elegí un capítulo. La primera vez se pide; después queda acá.
       </AppText>
 
       {missingKey ? (
@@ -64,12 +68,14 @@ export default function BibliaBookScreen() {
           <MissingBibleKey />
         </View>
       ) : loading ? (
-        <AppText variant="ui" tone="soft" style={{ marginTop: space.xl }}>
-          Cargando capítulos…
-        </AppText>
+        <BibleWarm title="Contando los capítulos…" body="Si ya los abriste, salen de este teléfono." />
       ) : error ? (
         <View style={{ marginTop: space.xl }}>
-          <EmptyState kicker="Capítulos" title={error} body="Si ya lo abriste, puede estar en la caché de este teléfono." />
+          <EmptyState
+            kicker="Capítulos"
+            title={error}
+            body="Si ya lo leíste en esta versión, puede estar guardado."
+          />
         </View>
       ) : (
         <View
@@ -77,7 +83,7 @@ export default function BibliaBookScreen() {
             marginTop: space.xl,
             flexDirection: 'row',
             flexWrap: 'wrap',
-            gap: 8,
+            gap: 10,
           }}>
           {chapters.map((chapter) => (
             <Pressable
@@ -89,8 +95,8 @@ export default function BibliaBookScreen() {
                 })
               }
               style={({ pressed }) => ({
-                width: 52,
-                height: 52,
+                width: 56,
+                height: 56,
                 borderRadius: radius.md,
                 borderWidth: 1,
                 borderColor: colors.line,
