@@ -1,0 +1,64 @@
+# Publica Comunión al channel preview desde Linux.
+# Solo manual: Actions → eas-update-preview → Run workflow.
+# Hace falta secrets.EXPO_TOKEN y extra.eas.projectId en app.json (main).
+name: eas-update-preview
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    name: Publish preview update
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check for EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Falta el secret EXPO_TOKEN."
+            echo "Creá un access token en https://expo.dev/settings/access-tokens"
+            echo "y pegalo en Settings → Secrets and variables → Actions → EXPO_TOKEN."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Require EAS projectId in app.json
+        run: |
+          node -e "
+            const app = require('./app.json');
+            const id = app.expo && app.expo.extra && app.expo.extra.eas && app.expo.extra.eas.projectId;
+            const url = app.expo && app.expo.updates && app.expo.updates.url;
+            if (!id || !url) {
+              console.error('app.json no tiene extra.eas.projectId o updates.url.');
+              console.error('En tu PC: eas init && eas update:configure, commiteá y pusheá a main.');
+              console.error('Sin esos campos el Action no sabe a qué proyecto de Expo publicar.');
+              process.exit(1);
+            }
+            console.log('EAS projectId:', id);
+          "
+
+      - name: Publish EAS Update (preview)
+        env:
+          CI: "1"
+        run: eas update --channel preview --message "preview ${{ github.sha }}" --environment preview --non-interactive
