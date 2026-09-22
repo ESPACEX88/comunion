@@ -12,7 +12,8 @@ Hace falta Node 18 o más reciente.
 2. En el dashboard de Supabase → **Settings → API**, pegá:
    - `EXPO_PUBLIC_SUPABASE_URL` (p. ej. `https://zpjrfxbrfdapoufdvrqr.supabase.co`)
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY` (la **anon** / publishable). **Nunca** la `service_role`.
-3. Reiniciá Expo para que tome las variables.
+3. Opcional, para el texto completo: `EXPO_PUBLIC_API_BIBLE_KEY` (scripture.api.bible). Sin ella la app no se cae: muestra «Falta configurar API.Bible».
+4. Reiniciá Expo para que tome las variables.
 
 ```bash
 npm install
@@ -131,6 +132,24 @@ En Windows `eas update` puede caerse (Hermes / `hermesc`, o la máquina se queda
 
 Las `EXPO_PUBLIC_*` las carga `--environment preview` desde EAS (environment `preview`). **No** van en el workflow ni en el repo. El job corre `CI=1 eas update --channel preview --non-interactive` en `ubuntu-latest`.
 
+## Biblia (API.Bible)
+
+El texto completo sale de [API.Bible](https://scripture.api.bible) (oficial, plan Starter gratis, uso no comercial). Los planes siguen trayendo la referencia; el lector pide el capítulo o el rango (p. ej. «Salmo 23», «Jn 3:16»).
+
+1. En [scripture.api.bible](https://scripture.api.bible) creá una app **Comunión** y copiá la API key.
+2. Local: `.env` → `EXPO_PUBLIC_API_BIBLE_KEY=` (el repo solo tiene el placeholder en `.env.example`). **Nunca** la commitees.
+3. Para Expo Go sin Metro, embebé la key en EAS environment **preview** y republicá:
+
+```bash
+eas env:set --name EXPO_PUBLIC_API_BIBLE_KEY --value PEGA_LA_KEY --environment preview --visibility sensitive
+npm run update:preview
+# o GitHub → Actions → eas-update-preview → Run workflow
+```
+
+Al primer uso la app lista `/bibles`, elige una española open/public domain (prioriza Reina Valera 1909) y guarda el `bibleId` en AsyncStorage. Los capítulos ya vistos se cachean para no gastar las 5k calls/mes y para leerlos offline. Sin key: «Falta configurar API.Bible», sin crash; el plan muestra el extracto.
+
+Entradas: **Hoy → Biblia** y **Yo → Leer la Biblia**. Tocá la referencia del día para abrir el pasaje completo.
+
 ## Mapa de pantallas
 
 | Ruta | Qué es |
@@ -144,6 +163,8 @@ Las `EXPO_PUBLIC_*` las carga `--environment preview` desde EAS (environment `pr
 | `/(tabs)` **Planes** | Plan activo de a dos (sembrado en Supabase) |
 | `/(tabs)` **Yo** | Perfil, recordatorios, historial, cerrar sesión |
 | `/recordatorios` | Avisos locales: Tu momento (mañana) y Juntos (si hay dúo) |
+| `/biblia` | Lector: libros → capítulos → texto completo (API.Bible) |
+| `/biblia/leer` | Capítulo o pasaje del plan (`?ref=Salmo 23`) |
 
 Flujo con nube: instalar → `.env` → registro de José → crear dúo → compartir código → Ana se registra y se une → check-in / oración / versículo / día del plan se ven en las dos cuentas (RLS: cada una solo ve su dúo).
 
@@ -244,17 +265,17 @@ El día del plan se elige por calendario desde la fecha en que se empezó (`plan
 | Código de ejemplo `MESA-7` | `create_duo` / `join_duo`, código real de 6 caracteres |
 | Check-ins, oraciones, mural, respuestas en JSON | Tablas `check_ins`, `prayers`, `heart_verses`, `plan_answers` |
 | Completados y gracia en JSON | `plan_completions` (`used_grace`) |
-| Plan embebido en la app | Fila por dúo en `plans` + `plan_days`; el texto del pasaje sigue en la app |
+| Plan embebido en la app | Fila por dúo en `plans` + `plan_days`; extracto local + texto completo vía API.Bible si hay key |
 
 La caché local está en `lib/storage.ts`. Las mutaciones del dúo viven en `lib/supabase-api.ts`.
 
 ## Carpetas
 
 ```
-app/           rutas de Expo Router (tabs, onboarding, lectura)
-components/    UI, racha, grupo, lectura, dúo
-features/      estado, auth, planes, dúo, miembros mock
-lib/           supabase, tipos, fechas, rachas, persistencia
+app/           rutas de Expo Router (tabs, onboarding, lectura, biblia)
+components/    UI, racha, grupo, lectura, dúo, biblia
+features/      estado, auth, planes, dúo, biblia, miembros mock
+lib/           supabase, bible, tipos, fechas, rachas, persistencia
 theme/         color, tipo, espacio
 ```
 
@@ -264,4 +285,4 @@ Tipografía: **Fraunces** (titulares y UI) y **Literata** (pasajes). Paleta: cre
 
 - Expo SDK 57, React Native 0.86, TypeScript, Expo Router. `expo-updates` ~57 está instalado; el `projectId` de EAS lo escribe José con `eas init`.
 - El filesystem de un host efímero (p. ej. Render) no aplica a esta app móvil; aquí la persistencia es AsyncStorage en el dispositivo.
-- Los extractos bíblicos son de demostración, de dominio público / parafraseados para el MVP. Más adelante conviene enlazar una traducción con licencia clara.
+- Los extractos de los planes son de demostración. El texto completo llega de API.Bible (edición española que autorice la key; se prefiere Reina Valera 1909 / dominio público).
