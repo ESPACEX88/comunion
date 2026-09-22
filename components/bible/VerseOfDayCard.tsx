@@ -1,18 +1,18 @@
 import { AppText } from '@/components/ui/AppText';
-import { Card } from '@/components/ui/Card';
 import { useBible } from '@/features/bible/BibleProvider';
 import { useBiblePassage } from '@/features/bible/useBiblePassage';
-import { verseOfDayRef } from '@/lib/bible/verseOfDay';
-import { space } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 type Props = {
-  dayKey: string;
+  reference: string;
+  kicker: string;
+  compact?: boolean;
 };
 
-export function VerseOfDayCard({ dayKey }: Props) {
-  const reference = verseOfDayRef(dayKey);
+export function VerseOfDayCard({ reference, kicker, compact }: Props) {
+  const { colors } = useTheme();
   const { bible } = useBible();
   const { passage, loading, error, missingKey } = useBiblePassage(reference);
   const text = passage?.verses.map((verse) => verse.text).join(' ').trim();
@@ -21,19 +21,20 @@ export function VerseOfDayCard({ dayKey }: Props) {
     <Pressable
       onPress={() => router.push({ pathname: '/biblia/leer', params: { ref: reference } })}
       accessibilityRole="button"
-      accessibilityLabel={`Versículo del día, ${reference}`}>
-      <Card accent="amber" style={{ marginTop: space.md }}>
+      accessibilityLabel={`${kicker}, ${reference}`}>
+      <View
+        style={{
+          backgroundColor: colors.paper,
+          borderColor: colors.line,
+          borderWidth: 1,
+          borderLeftWidth: 3,
+          borderLeftColor: colors.amber,
+          borderRadius: radius.lg,
+          padding: compact ? space.lg : 28,
+        }}>
         <AppText variant="label" tone="amber">
-          Versículo del día
+          {kicker}
         </AppText>
-        <AppText variant="subtitle" style={{ marginTop: 10 }}>
-          {reference}
-        </AppText>
-        {bible?.abbreviation ? (
-          <AppText variant="caption" tone="soft" style={{ marginTop: 4 }}>
-            {bible.abbreviation}
-          </AppText>
-        ) : null}
 
         {missingKey ? (
           <AppText variant="body" tone="soft" style={{ marginTop: space.md }}>
@@ -53,12 +54,21 @@ export function VerseOfDayCard({ dayKey }: Props) {
           </AppText>
         )}
 
+        <AppText variant="subtitle" style={{ marginTop: space.lg }}>
+          {reference}
+        </AppText>
+        {bible?.abbreviation ? (
+          <AppText variant="caption" tone="soft" style={{ marginTop: 4 }}>
+            {bible.abbreviation}
+          </AppText>
+        ) : null}
+
         <View style={{ marginTop: space.md }}>
           <AppText variant="caption" tone="amber">
             Abrir en la Biblia
           </AppText>
         </View>
-      </Card>
+      </View>
     </Pressable>
   );
 }

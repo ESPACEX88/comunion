@@ -2,7 +2,8 @@ import { bookMatchesQuery } from './filterBooks';
 import { versesFromContent } from './parseContent';
 import { parseScriptureRef, passageIdFromRef } from './parseRef';
 import { VERSE_OF_DAY_REFS } from './verseCalendar';
-import { verseOfDayRef } from './verseOfDay';
+import { personalVerseOfDayRef, sharedVerseOfDayRef, verseOfDayRef } from './verseOfDay';
+import { SOLO_PSALMS_PLAN, planDayForDate } from '@/features/plans/content';
 
 function assert(cond: unknown, message: string) {
   if (!cond) throw new Error(message);
@@ -41,5 +42,33 @@ for (const ref of VERSE_OF_DAY_REFS) {
 assert(VERSE_OF_DAY_REFS.length >= 60, 'al menos 60 pasajes');
 assert(verseOfDayRef('2026-01-01') !== verseOfDayRef('2026-01-02'), 'dos dayKeys distintos');
 assert(verseOfDayRef('2026-03-15') === verseOfDayRef('2026-03-15'), 'mismo dayKey estable');
+assert(
+  verseOfDayRef('2026-09-22', 'user-ana') !== verseOfDayRef('2026-09-22', 'user-jose'),
+  'mismo día, dos cuentas',
+);
+assert(
+  verseOfDayRef('2026-09-22', 'user-ana') === verseOfDayRef('2026-09-22', 'user-ana'),
+  'misma cuenta estable',
+);
+assert(
+  verseOfDayRef('2026-09-22') === verseOfDayRef('2026-09-22'),
+  'versículo de los dos estable',
+);
+assert(
+  personalVerseOfDayRef('2026-09-22', { userId: 'aaa', name: 'Ana' }) !==
+    personalVerseOfDayRef('2026-09-22', { userId: 'bbb', name: 'José' }),
+  'personal por userId',
+);
+assert(
+  sharedVerseOfDayRef('2026-09-22') === verseOfDayRef('2026-09-22'),
+  'compartido sin seed',
+);
+
+const startToday = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22', '2026-09-22');
+assert(startToday.dayNumber === 1 && startToday.reference === 'Salmo 1', 'lectura de hoy es día 1');
+const startIso = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22T00:00:00.000Z', '2026-09-22');
+assert(startIso.dayNumber === 1, 'starts_on ISO no se atrasa');
+const dayTwo = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-21', '2026-09-22');
+assert(dayTwo.dayNumber === 2, 'ayer empezó, hoy es día 2');
 
 console.log('bible refs ok');

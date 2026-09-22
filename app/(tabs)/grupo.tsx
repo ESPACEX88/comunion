@@ -1,3 +1,4 @@
+import { VerseOfDayCard } from '@/components/bible/VerseOfDayCard';
 import { HubEntry } from '@/components/group/HubEntry';
 import { MemberRow } from '@/components/group/MemberRow';
 import { StreakMark } from '@/components/streak/StreakMark';
@@ -8,6 +9,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { partnerFirstName } from '@/features/duo/labels';
+import { sharedVerseOfDayRef } from '@/lib/bible/verseOfDay';
 import { space } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
@@ -28,11 +30,17 @@ export default function GrupoScreen() {
     live,
     hasDuo,
     selfId,
+    today,
+    todayGroupReading,
+    groupPlan,
+    todayStatus,
+    openReading,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
   const [copied, setCopied] = useState(false);
   const self = members.find((member) => member.isSelf) ?? members[0];
   const friendName = partnerFirstName(specialFriend);
+  const sharedRef = sharedVerseOfDayRef(today);
   const rest = members.filter((member) => !member.isSelf && !member.isSpecialFriend);
   const openPrayers = prayerRequests.filter((item) => item.prayedBy.length === 0).length;
   const checkInHint =
@@ -58,7 +66,7 @@ export default function GrupoScreen() {
         <View style={{ height: space.xl }} />
         <Button label="Crear o unirme a un dúo" onPress={() => router.push('/onboarding/grupo')} />
         <Button
-          label="Volver a tu momento"
+          label="Volver a Hoy"
           variant="ghost"
           style={{ marginTop: 10 }}
           onPress={() => router.push('/(tabs)')}
@@ -83,6 +91,9 @@ export default function GrupoScreen() {
           : `${state.group.name}. El dúo es lo íntimo.`}
       </AppText>
       <Ornament />
+      <View style={{ marginBottom: space.xl }}>
+        <VerseOfDayCard reference={sharedRef} kicker="Versículo de los dos" compact />
+      </View>
       <StreakMark
         count={groupStreakCount}
         label="Racha compartida"
@@ -94,6 +105,19 @@ export default function GrupoScreen() {
         }
       />
       <View style={{ marginTop: space.xl }}>
+        <HubEntry
+          kicker="Lectura de a dos"
+          title={todayGroupReading.reference}
+          hint={
+            todayStatus === 'completado'
+              ? `Hoy ya leyeron ${todayGroupReading.title.toLowerCase()}.`
+              : `${groupPlan.title} · día ${todayGroupReading.dayNumber} de ${groupPlan.days.length}`
+          }
+          onPress={() => {
+            openReading();
+            router.push({ pathname: '/lectura', params: { plan: 'group' } });
+          }}
+        />
         <HubEntry
           kicker="Oración"
           title="Pedidos de las dos"
