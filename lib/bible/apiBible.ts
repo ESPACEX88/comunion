@@ -63,7 +63,11 @@ export async function listSpanishBibles(): Promise<BibleSummary[]> {
     list = [];
   }
   if (list.length === 0) {
-    list = await listBibles();
+    try {
+      list = await listBibles();
+    } catch {
+      list = [];
+    }
   }
   const ranked = rankSpanishBibles(list);
   if (ranked.length > 0) {

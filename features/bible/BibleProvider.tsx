@@ -50,11 +50,12 @@ export function BibleProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const [selected, catalog] = await Promise.all([ensurePreferredBible(), listSpanishBibles()]);
-      const nextBooks = await listBooks(selected.id);
+      const selected = await ensurePreferredBible();
       setBible(selected);
-      setEditions(catalog);
-      setBooks(nextBooks);
+      const catalog = await listSpanishBibles().catch(() => [] as BibleSummary[]);
+      if (catalog.length > 0) setEditions(catalog);
+      const nextBooks = await listBooks(selected.id).catch(() => [] as BibleBook[]);
+      if (nextBooks.length > 0) setBooks(nextBooks);
       setError(null);
     } catch (caught) {
       setError(friendlyError(caught));
