@@ -9,6 +9,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useBible } from '@/features/bible/BibleProvider';
 import { useBiblePassage } from '@/features/bible/useBiblePassage';
 import type { BiblePassage } from '@/lib/bible/types';
+import { friendlyBibleLoadError } from '@/lib/bible/errors';
 import { space } from '@/theme';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -21,6 +22,7 @@ export default function BibliaLeerScreen() {
   const [fromChapter, setFromChapter] = useState<BiblePassage | null>(null);
   const [chapterError, setChapterError] = useState<string | null>(null);
   const [chapterLoading, setChapterLoading] = useState(false);
+  const [chapterTick, setChapterTick] = useState(0);
 
   useEffect(() => {
     if (params.ref || !params.chapter || missingKey || !ready) return;
@@ -35,7 +37,7 @@ export default function BibliaLeerScreen() {
       })
       .catch((caught) => {
         if (!cancelled) {
-          setChapterError(caught instanceof Error ? caught.message : 'No se pudo abrir el capítulo.');
+          setChapterError(friendlyBibleLoadError(caught));
           setFromChapter(null);
         }
       })
@@ -45,7 +47,7 @@ export default function BibliaLeerScreen() {
     return () => {
       cancelled = true;
     };
-  }, [params.chapter, params.ref, missingKey, ready, loadChapter]);
+  }, [params.chapter, params.ref, missingKey, ready, loadChapter, chapterTick]);
 
   const passage = params.ref ? fromRef.passage : fromChapter;
   const loading = params.ref ? fromRef.loading : chapterLoading;
@@ -76,7 +78,12 @@ export default function BibliaLeerScreen() {
         <EmptyState
           kicker="Pasaje"
           title={error}
-          body="Si ya lo leíste en esta versión, puede estar guardado acá."
+          body="La referencia se queda. Probá de nuevo cuando la red responda."
+          actionLabel="Reintentar"
+          onAction={() => {
+            if (params.ref) fromRef.retry();
+            else setChapterTick((value) => value + 1);
+          }}
         />
       ) : passage && passage.verses.length > 0 ? (
         <View>

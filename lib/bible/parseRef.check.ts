@@ -3,6 +3,7 @@ import { versesFromContent } from './parseContent';
 import { parseScriptureRef, passageIdFromRef } from './parseRef';
 import { VERSE_OF_DAY_REFS } from './verseCalendar';
 import { personalVerseOfDayRef, sharedVerseOfDayRef, verseOfDayRef } from './verseOfDay';
+import { BIBLE_RETRY_COPY, friendlyBibleLoadError } from './errors';
 import { SOLO_PSALMS_PLAN, planDayForDate } from '@/features/plans/content';
 
 function assert(cond: unknown, message: string) {
@@ -70,5 +71,12 @@ const startIso = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22T00:00:00.000Z', '2
 assert(startIso.dayNumber === 1, 'starts_on ISO no se atrasa');
 const dayTwo = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-21', '2026-09-22');
 assert(dayTwo.dayNumber === 2, 'ayer empezó, hoy es día 2');
+
+const tls = new Error(
+  'fetch failed: UnexpectedException: A TLS error caused the secure connection to fail. (at ExpoModulesCore/Promise.swift:56)',
+);
+assert(friendlyBibleLoadError(tls) === BIBLE_RETRY_COPY, 'TLS crudo no se muestra');
+assert(!friendlyBibleLoadError(tls).includes('TLS'), 'sin TLS');
+assert(!friendlyBibleLoadError(tls).includes('Promise.swift'), 'sin stack');
 
 console.log('bible refs ok');
