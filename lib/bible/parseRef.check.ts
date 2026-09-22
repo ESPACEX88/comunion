@@ -1,6 +1,8 @@
 import { bookMatchesQuery } from './filterBooks';
 import { versesFromContent } from './parseContent';
 import { parseScriptureRef, passageIdFromRef } from './parseRef';
+import { VERSE_OF_DAY_REFS } from './verseCalendar';
+import { verseOfDayRef } from './verseOfDay';
 
 function assert(cond: unknown, message: string) {
   if (!cond) throw new Error(message);
@@ -30,5 +32,14 @@ const psalms = { id: 'PSA', bibleId: 'x', abbreviation: 'Sal', name: 'Salmos', n
 assert(bookMatchesQuery(psalms, 'sal'), 'busca sal');
 assert(bookMatchesQuery(psalms, 'Jn') === false, 'sal no es jn');
 assert(bookMatchesQuery(psalms, ''), 'vacío muestra todos');
+
+for (const ref of VERSE_OF_DAY_REFS) {
+  const parsed = parseScriptureRef(ref);
+  assert(parsed?.bookId, `calendario parsea ${ref}`);
+  assert(passageIdFromRef(parsed!), `calendario id ${ref}`);
+}
+assert(VERSE_OF_DAY_REFS.length >= 60, 'al menos 60 pasajes');
+assert(verseOfDayRef('2026-01-01') !== verseOfDayRef('2026-01-02'), 'dos dayKeys distintos');
+assert(verseOfDayRef('2026-03-15') === verseOfDayRef('2026-03-15'), 'mismo dayKey estable');
 
 console.log('bible refs ok');

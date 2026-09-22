@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useBible } from './BibleProvider';
 
 export function useBiblePassage(reference?: string | null) {
-  const { missingKey, ready, loadRef } = useBible();
+  const { missingKey, ready, loadRef, bible } = useBible();
   const [passage, setPassage] = useState<BiblePassage | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function useBiblePassage(reference?: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [reference, missingKey, ready, loadRef]);
+  }, [reference, missingKey, ready, loadRef, bible?.id]);
 
   return { passage, loading, error, missingKey };
 }
