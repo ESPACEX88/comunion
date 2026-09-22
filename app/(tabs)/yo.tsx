@@ -74,6 +74,12 @@ export default function YoScreen() {
 
       <View style={{ marginTop: space.xl }}>
         <HubEntry
+          kicker="Biblia"
+          title="Leer la Biblia"
+          hint="Libros y capítulos. El texto completo, si hay clave de API.Bible."
+          onPress={() => router.push('/biblia')}
+        />
+        <HubEntry
           kicker="Diario"
           title="Lo que no va al dúo"
           hint={

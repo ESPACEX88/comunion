@@ -1,3 +1,5 @@
+import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
+import { VerseList } from '@/components/bible/VerseList';
 import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
 import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
 import { AppText } from '@/components/ui/AppText';
@@ -7,6 +9,8 @@ import { Ornament } from '@/components/ui/Ornament';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useBible } from '@/features/bible/BibleProvider';
+import { useBiblePassage } from '@/features/bible/useBiblePassage';
 import { partnerFirstName } from '@/features/duo/labels';
 import { PERSONAL_NOTE_MAX } from '@/features/duo/moods';
 import { isDuoPlan, isPlanFinished } from '@/features/plans/content';
@@ -56,6 +60,9 @@ export default function LecturaScreen() {
   const [dayNote, setDayNote] = useState('');
   const [saving, setSaving] = useState(false);
   const { colors } = useTheme();
+  const { bible } = useBible();
+  const full = useBiblePassage(day.reference);
+  const verses = full.passage?.verses.length ? full.passage.verses : day.verses;
 
   useEffect(() => {
     if (kind === 'personal') openPersonalReading();
@@ -98,9 +105,13 @@ export default function LecturaScreen() {
         {kind === 'personal' ? 'Plan personal · ' : isDuoPlan(plan) ? 'Plan de a dos · ' : ''}
         {plan.title}
       </AppText>
-      <AppText variant="display" style={{ marginTop: 4 }}>
-        {day.reference}
-      </AppText>
+      <Pressable
+        onPress={() => router.push({ pathname: '/biblia/leer', params: { ref: day.reference } })}
+        hitSlop={8}>
+        <AppText variant="display" style={{ marginTop: 4 }}>
+          {day.reference}
+        </AppText>
+      </Pressable>
       <AppText variant="subtitle" tone="soft">
         {day.title}
       </AppText>
@@ -111,16 +122,24 @@ export default function LecturaScreen() {
         {finished ? ' · el calendario del plan ya se cumplió' : ''}
       </AppText>
       <View style={{ height: space.lg }} />
-      {day.verses.map((verse) => (
-        <View key={`${day.id}-${verse.n}`} style={{ flexDirection: 'row', gap: 12, marginBottom: 18 }}>
-          <AppText variant="caption" tone="amber" style={{ width: 22, marginTop: 6 }}>
-            {verse.n}
-          </AppText>
-          <AppText variant="verse" style={{ flex: 1 }}>
-            {verse.text}
-          </AppText>
+      {full.missingKey ? (
+        <View style={{ marginBottom: space.lg }}>
+          <MissingBibleKey compact />
         </View>
-      ))}
+      ) : full.loading ? (
+        <AppText variant="ui" tone="soft" style={{ marginBottom: space.lg }}>
+          Trayendo el pasaje completo…
+        </AppText>
+      ) : full.passage?.verses.length ? (
+        <AppText variant="caption" tone="olive" style={{ marginBottom: space.md }}>
+          Texto completo{bible ? ` · ${bible.abbreviation || bible.name}` : ''}
+        </AppText>
+      ) : (
+        <AppText variant="caption" tone="soft" style={{ marginBottom: space.md }}>
+          Extracto del plan. Tocá la referencia para abrir el lector.
+        </AppText>
+      )}
+      <VerseList verses={verses} />
       <View
         style={{
           marginTop: space.sm,

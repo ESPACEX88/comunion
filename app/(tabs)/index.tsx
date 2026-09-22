@@ -111,6 +111,9 @@ export default function HoyScreen() {
               openPersonalReading();
               router.push({ pathname: '/lectura', params: { plan: 'personal' } });
             }}
+            onReferencePress={() =>
+              router.push({ pathname: '/biblia/leer', params: { ref: todayPersonalReading.reference } })
+            }
           />
         </View>
       ) : (
@@ -180,6 +183,15 @@ export default function HoyScreen() {
         </AppText>
       </Pressable>
 
+      <Pressable onPress={() => router.push('/biblia')} style={{ marginTop: space.xl }}>
+        <AppText variant="label" tone="olive">
+          Biblia
+        </AppText>
+        <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+          Leer la Biblia. Libros, capítulos y el texto completo.
+        </AppText>
+      </Pressable>
+
       {hasDuo ? (
         <View style={{ marginTop: space.xxl }}>
           <AppText variant="label" tone="olive">
@@ -208,6 +220,9 @@ export default function HoyScreen() {
                   openReading();
                   router.push({ pathname: '/lectura', params: { plan: 'group' } });
                 }}
+                onReferencePress={() =>
+                  router.push({ pathname: '/biblia/leer', params: { ref: todayGroupReading.reference } })
+                }
               />
             </View>
           )}
