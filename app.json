@@ -48,6 +48,16 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "413a3054-8ae7-4cb6-b2e0-e1476c21d12f"
+      }
+    },
+    "owner": "spacex24",
+    "updates": {
+      "url": "https://u.expo.dev/413a3054-8ae7-4cb6-b2e0-e1476c21d12f"
     }
   }
 }
