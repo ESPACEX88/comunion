@@ -1,3 +1,4 @@
+import { VerseOfDayCard } from '@/components/bible/VerseOfDayCard';
 import { CheckInCard } from '@/components/duo/CheckInCard';
 import { CheckInComposer } from '@/components/duo/CheckInComposer';
 import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
@@ -95,6 +96,8 @@ export default function HoyScreen() {
           {syncError}
         </AppText>
       ) : null}
+
+      <VerseOfDayCard dayKey={today} />
 
       <AppText variant="label" tone="amber" style={{ marginTop: space.xl }}>
         Tu momento

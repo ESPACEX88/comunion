@@ -1,4 +1,6 @@
-/** Fechas locales YYYY-MM-DD. Evitamos ISO UTC para que el día no salte con el huso. */
+/** Fechas civiles YYYY-MM-DD. El “hoy” de Comunión es America/Guatemala. */
+
+export const APP_TIMEZONE = 'America/Guatemala';
 
 export function toDayKey(date: Date): string {
   const y = date.getFullYear();
@@ -7,8 +9,23 @@ export function toDayKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+export function toDayKeyInZone(date: Date, timeZone = APP_TIMEZONE): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
 export function todayKey(now = new Date()): string {
-  return toDayKey(now);
+  return toDayKeyInZone(now, APP_TIMEZONE);
+}
+
+/** Día del año 0–365 a partir de un dayKey (1 de enero = 0). */
+export function dayOfYearIndex(dayKey: string): number {
+  const date = parseDayKey(dayKey);
+  return calendarDiff(`${date.getFullYear()}-01-01`, dayKey);
 }
 
 export function parseDayKey(dayKey: string): Date {
