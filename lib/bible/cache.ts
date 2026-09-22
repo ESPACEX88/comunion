@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { BibleBook, BibleChapterMeta, BiblePassage, SelectedBible } from './types';
+import type { BibleBook, BibleChapterMeta, BiblePassage, BibleSummary, SelectedBible } from './types';
 
 const META_KEY = '@comunion/bible/meta';
+const CATALOG_KEY = '@comunion/bible/catalog';
 const BOOKS_PREFIX = '@comunion/bible/books/';
 const CHAPTERS_PREFIX = '@comunion/bible/chapters/';
 const TEXT_PREFIX = '@comunion/bible/text/';
@@ -20,6 +21,20 @@ export async function loadSelectedBible(): Promise<SelectedBible | null> {
 
 export async function saveSelectedBible(bible: SelectedBible): Promise<void> {
   await AsyncStorage.setItem(META_KEY, JSON.stringify(bible));
+}
+
+export async function loadBibleCatalog(): Promise<BibleSummary[] | null> {
+  const raw = await AsyncStorage.getItem(CATALOG_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as BibleSummary[];
+  } catch {
+    return null;
+  }
+}
+
+export async function saveBibleCatalog(bibles: BibleSummary[]): Promise<void> {
+  await AsyncStorage.setItem(CATALOG_KEY, JSON.stringify(bibles));
 }
 
 export async function loadBooks(bibleId: string): Promise<BibleBook[] | null> {

@@ -7,8 +7,10 @@ import {
   hasApiBibleKey,
   listBooks,
   listChapters,
+  listSpanishBibles,
+  selectBibleEdition,
 } from '@/lib/bible/apiBible';
-import type { BibleBook, BibleChapterMeta, BiblePassage, SelectedBible } from '@/lib/bible/types';
+import type { BibleBook, BibleChapterMeta, BiblePassage, BibleSummary, SelectedBible } from '@/lib/bible/types';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 type BibleContextValue = {
@@ -16,8 +18,11 @@ type BibleContextValue = {
   ready: boolean;
   bible: SelectedBible | null;
   books: BibleBook[];
+  editions: BibleSummary[];
   error: string | null;
+  switching: boolean;
   ensureReady: () => Promise<void>;
+  selectEdition: (edition: BibleSummary) => Promise<void>;
   loadChapters: (bookId: string) => Promise<BibleChapterMeta[]>;
   loadChapter: (chapterId: string) => Promise<BiblePassage>;
   loadRef: (reference: string) => Promise<BiblePassage>;
@@ -43,7 +48,9 @@ export function BibleProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(missingKey);
   const [bible, setBible] = useState<SelectedBible | null>(null);
   const [books, setBooks] = useState<BibleBook[]>([]);
+  const [editions, setEditions] = useState<BibleSummary[]>([]);
   const [error, setError] = useState<string | null>(missingKey ? 'Falta configurar API.Bible' : null);
+  const [switching, setSwitching] = useState(false);
 
   const ensureReady = useCallback(async () => {
     if (!hasApiBibleKey()) {
@@ -52,9 +59,10 @@ export function BibleProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const selected = await ensurePreferredBible();
+      const [selected, catalog] = await Promise.all([ensurePreferredBible(), listSpanishBibles()]);
       const nextBooks = await listBooks(selected.id);
       setBible(selected);
+      setEditions(catalog);
       setBooks(nextBooks);
       setError(null);
     } catch (caught) {
@@ -67,6 +75,25 @@ export function BibleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void ensureReady();
   }, [ensureReady]);
+
+  const selectEdition = useCallback(async (edition: BibleSummary) => {
+    if (!hasApiBibleKey()) {
+      setError('Falta configurar API.Bible');
+      return;
+    }
+    setSwitching(true);
+    try {
+      const selected = await selectBibleEdition(edition);
+      const nextBooks = await listBooks(selected.id);
+      setBible(selected);
+      setBooks(nextBooks);
+      setError(null);
+    } catch (caught) {
+      setError(friendlyError(caught));
+    } finally {
+      setSwitching(false);
+    }
+  }, []);
 
   const loadChapters = useCallback(
     async (bookId: string) => {
@@ -98,13 +125,29 @@ export function BibleProvider({ children }: { children: ReactNode }) {
       ready,
       bible,
       books,
+      editions,
       error,
+      switching,
       ensureReady,
+      selectEdition,
       loadChapters,
       loadChapter,
       loadRef,
     }),
-    [missingKey, ready, bible, books, error, ensureReady, loadChapters, loadChapter, loadRef],
+    [
+      missingKey,
+      ready,
+      bible,
+      books,
+      editions,
+      error,
+      switching,
+      ensureReady,
+      selectEdition,
+      loadChapters,
+      loadChapter,
+      loadRef,
+    ],
   );
 
   return <BibleContext.Provider value={value}>{children}</BibleContext.Provider>;

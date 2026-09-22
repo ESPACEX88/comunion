@@ -1,5 +1,6 @@
-import { parseScriptureRef, passageIdFromRef } from './parseRef';
+import { bookMatchesQuery } from './filterBooks';
 import { versesFromContent } from './parseContent';
+import { parseScriptureRef, passageIdFromRef } from './parseRef';
 
 function assert(cond: unknown, message: string) {
   if (!cond) throw new Error(message);
@@ -24,5 +25,10 @@ const html = versesFromContent(
   '<p><span data-number="1" class="v">1</span>Jehová es mi pastor; nada me faltará. <span data-number="2" class="v">2</span>En lugares de delicados pastos me hará descansar.</p>',
 );
 assert(html.length === 2 && html[0].n === 1 && html[0].text.includes('pastor'), 'html verses');
+
+const psalms = { id: 'PSA', bibleId: 'x', abbreviation: 'Sal', name: 'Salmos', nameLong: 'Libro de los Salmos' };
+assert(bookMatchesQuery(psalms, 'sal'), 'busca sal');
+assert(bookMatchesQuery(psalms, 'Jn') === false, 'sal no es jn');
+assert(bookMatchesQuery(psalms, ''), 'vacío muestra todos');
 
 console.log('bible refs ok');

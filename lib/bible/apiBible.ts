@@ -1,7 +1,18 @@
-import { loadBooks, loadChapterList, loadPassage, loadSelectedBible, saveBooks, saveChapterList, savePassage, saveSelectedBible } from './cache';
+import {
+  loadBibleCatalog,
+  loadBooks,
+  loadChapterList,
+  loadPassage,
+  loadSelectedBible,
+  saveBibleCatalog,
+  saveBooks,
+  saveChapterList,
+  savePassage,
+  saveSelectedBible,
+} from './cache';
 import { versesFromContent, sliceVerses } from './parseContent';
 import { isWholeChapter, parseScriptureRef, passageIdFromRef } from './parseRef';
-import { pickPreferredSpanishBible } from './pickBible';
+import { friendlyBibleName, pickPreferredSpanishBible, rankSpanishBibles } from './pickBible';
 import type { BibleBook, BibleChapterMeta, BiblePassage, BibleSummary, SelectedBible } from './types';
 
 const BASE = 'https://api.scripture.api.bible/v1';
@@ -71,9 +82,18 @@ export async function listBibles(language?: string): Promise<BibleSummary[]> {
   return bibleGet<BibleSummary[]>('/bibles', language ? { language } : undefined);
 }
 
-export async function ensurePreferredBible(): Promise<SelectedBible> {
-  const cached = await loadSelectedBible();
-  if (cached) return cached;
+export function toSelectedBible(picked: BibleSummary): SelectedBible {
+  return {
+    id: picked.id,
+    name: friendlyBibleName(picked),
+    abbreviation: picked.abbreviationLocal || picked.abbreviation || '',
+    copyright: picked.copyright,
+  };
+}
+
+export async function listSpanishBibles(): Promise<BibleSummary[]> {
+  const cached = await loadBibleCatalog();
+  if (cached && cached.length > 0) return cached;
   let list: BibleSummary[] = [];
   try {
     list = await listBibles('spa');
@@ -83,16 +103,28 @@ export async function ensurePreferredBible(): Promise<SelectedBible> {
   if (list.length === 0) {
     list = await listBibles();
   }
+  const ranked = rankSpanishBibles(list);
+  if (ranked.length > 0) {
+    await saveBibleCatalog(ranked);
+  }
+  return ranked;
+}
+
+export async function ensurePreferredBible(): Promise<SelectedBible> {
+  const cached = await loadSelectedBible();
+  if (cached) return cached;
+  const list = await listSpanishBibles();
   const picked = pickPreferredSpanishBible(list);
   if (!picked) {
     throw new BibleApiError('No encontré una Biblia en español en tu cuenta de API.Bible.');
   }
-  const selected: SelectedBible = {
-    id: picked.id,
-    name: picked.nameLocal || picked.name,
-    abbreviation: picked.abbreviationLocal || picked.abbreviation || '',
-    copyright: picked.copyright,
-  };
+  const selected = toSelectedBible(picked);
+  await saveSelectedBible(selected);
+  return selected;
+}
+
+export async function selectBibleEdition(edition: BibleSummary): Promise<SelectedBible> {
+  const selected = toSelectedBible(edition);
   await saveSelectedBible(selected);
   return selected;
 }
