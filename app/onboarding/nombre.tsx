@@ -1,4 +1,6 @@
+import { Enter } from '@/components/motion/Enter';
 import { AppText } from '@/components/ui/AppText';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
@@ -16,12 +18,14 @@ export default function OnboardingName() {
 
   return (
     <Screen>
-      <AppText variant="label" tone="olive">
-        Comunión · este teléfono
-      </AppText>
-      <AppText variant="display" style={{ marginTop: space.md }}>
-        Antes de la mesa, tu nombre.
-      </AppText>
+      <Enter>
+        <BrandMark compact />
+      </Enter>
+      <Enter delay={50}>
+        <AppText variant="title" style={{ marginTop: space.lg, textAlign: 'center' }}>
+          Antes, tu nombre
+        </AppText>
+      </Enter>
       <Ornament />
       <AppText variant="body" tone="soft">
         Esto queda en este teléfono. Podés entrar ya a tu espacio, o más adelante sumar un dúo.

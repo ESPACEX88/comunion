@@ -1,7 +1,7 @@
+import { PressScale } from '@/components/motion/PressScale';
 import { AppText } from '@/components/ui/AppText';
 import { radius, space, useTheme } from '@/theme';
-import { forwardRef } from 'react';
-import { Pressable, type PressableProps, type StyleProp, type View, type ViewStyle } from 'react-native';
+import { View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 
 type Variant = 'primary' | 'olive' | 'ghost' | 'inline';
 
@@ -11,10 +11,7 @@ type Props = PressableProps & {
   style?: StyleProp<ViewStyle>;
 };
 
-export const Button = forwardRef<View, Props>(function Button(
-  { label, variant = 'primary', style, disabled, ...rest },
-  ref,
-) {
+export function Button({ label, variant = 'primary', style, disabled, ...rest }: Props) {
   const { colors } = useTheme();
   const palette = {
     primary: { bg: colors.amber, fg: colors.white, border: colors.amber },
@@ -24,32 +21,23 @@ export const Button = forwardRef<View, Props>(function Button(
   }[variant];
 
   return (
-    <Pressable
-      ref={ref}
-      accessibilityRole="button"
-      disabled={disabled}
-      style={({ pressed }) => [
-        {
+    <PressScale accessibilityRole="button" disabled={disabled} style={style} {...rest}>
+      <View
+        style={{
           backgroundColor: palette.bg,
           borderColor: palette.border,
           borderWidth: variant === 'inline' ? 0 : 1,
-          borderRadius: radius.md,
-          paddingVertical: variant === 'inline' ? 6 : 14,
+          borderRadius: radius.lg,
+          paddingVertical: variant === 'inline' ? 6 : 15,
           paddingHorizontal: variant === 'inline' ? 0 : space.lg,
           alignItems: 'center',
-          opacity: disabled ? 0.45 : pressed ? 0.82 : 1,
-        },
-        style,
-      ]}
-      {...rest}>
-      <AppText
-        variant="ui"
-        style={{
-          color: palette.fg,
-          letterSpacing: 0.4,
+          width: '100%',
+          opacity: disabled ? 0.45 : 1,
         }}>
-        {label}
-      </AppText>
-    </Pressable>
+        <AppText variant="ui" style={{ color: palette.fg, letterSpacing: 0.4 }}>
+          {label}
+        </AppText>
+      </View>
+    </PressScale>
   );
-});
+}
