@@ -160,7 +160,7 @@ Si cambiaste código: lanzá un **Run workflow nuevo** de `eas-update-preview` (
 
 | Ruta | Qué es |
 | --- | --- |
-| `/onboarding` | Cuenta (registro / login). Opcional: seguir sin cuenta en este teléfono |
+| `/onboarding` | Cuenta (registro / login, campos vacíos). Opcional: seguir sin cuenta |
 | `/onboarding/grupo` | Crear dúo (`create_duo`) o unirse con código (`join_duo`) |
 | `/onboarding/plan` | Confirmar «Salmos de a dos» |
 | `/(tabs)` **Hoy** | Tu versículo, acciones del día (lectura, check-in, diario, Biblia) |

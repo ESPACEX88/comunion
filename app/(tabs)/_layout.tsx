@@ -23,6 +23,7 @@ export default function TabLayout() {
           letterSpacing: 1.1,
           textTransform: 'uppercase',
         },
+        animation: 'fade',
       }}>
       <Tabs.Screen
         name="index"

@@ -1,5 +1,6 @@
 import { VerseOfDayCard } from '@/components/bible/VerseOfDayCard';
 import { DayActionRow } from '@/components/hoy/DayActionRow';
+import { Enter } from '@/components/motion/Enter';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
@@ -43,67 +44,79 @@ export default function HoyScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <AppText variant="label" tone="olive">
-        {greeting()}
-      </AppText>
-      <AppText variant="title" style={{ marginTop: 8 }}>
-        {state.userName.split(' ')[0] || 'Vos'}
-      </AppText>
-      <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
-        {formatLongDate(today)}
-      </AppText>
+      <Enter>
+        <AppText variant="label" tone="olive">
+          {greeting()}
+        </AppText>
+        <AppText variant="title" style={{ marginTop: 8 }}>
+          {state.userName.split(' ')[0] || 'Vos'}
+        </AppText>
+        <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+          {formatLongDate(today)}
+        </AppText>
+      </Enter>
       {syncError ? (
         <AppText variant="ui" style={{ color: colors.terracotta, marginTop: space.md }}>
           {syncError}
         </AppText>
       ) : null}
 
-      <View style={{ marginTop: space.lg }}>
+      <Enter delay={80} style={{ marginTop: space.lg }}>
         <VerseOfDayCard reference={personalRef} kicker="Tu versículo" />
-      </View>
+      </Enter>
 
       <View style={{ marginTop: space.xl, gap: 12 }}>
-        <DayActionRow
-          title="Lectura"
-          hint={readingHint}
-          cta={readingDone ? 'Hecho' : 'Ir'}
-          done={readingDone}
-          onPress={async () => {
-            if (!personalPlan) await ensureSoloPlan();
-            openPersonalReading();
-            router.push({ pathname: '/lectura', params: { plan: 'personal' } });
-          }}
-        />
-        <DayActionRow
-          title="Check-in"
-          hint={myCheckInToday ? moodLabel(myCheckInToday.mood) : 'Cómo te encontró hoy'}
-          cta={myCheckInToday ? 'Hecho' : 'Ir'}
-          done={Boolean(myCheckInToday)}
-          onPress={() => router.push('/check-in')}
-        />
-        <DayActionRow
-          title="Diario"
-          hint={
-            lastJournal
-              ? lastJournal.title || lastJournal.body.slice(0, 48)
-              : 'Lo que no va al dúo'
-          }
-          cta="Ir"
-          onPress={() => router.push('/diario')}
-        />
-        <DayActionRow
-          title="Biblia"
-          hint="Libros, capítulos, el texto completo"
-          cta="Ir"
-          onPress={() => router.push('/biblia')}
-        />
-        {hasDuo ? (
+        <Enter delay={140}>
           <DayActionRow
-            title={`Con ${friendName}`}
-            hint="Versículo de los dos, lectura y oración"
-            cta="Ir"
-            onPress={() => router.push('/(tabs)/grupo')}
+            title="Lectura"
+            hint={readingHint}
+            cta={readingDone ? 'Hecho' : 'Ir'}
+            done={readingDone}
+            onPress={async () => {
+              if (!personalPlan) await ensureSoloPlan();
+              openPersonalReading();
+              router.push({ pathname: '/lectura', params: { plan: 'personal' } });
+            }}
           />
+        </Enter>
+        <Enter delay={180}>
+          <DayActionRow
+            title="Check-in"
+            hint={myCheckInToday ? moodLabel(myCheckInToday.mood) : 'Cómo te encontró hoy'}
+            cta={myCheckInToday ? 'Hecho' : 'Ir'}
+            done={Boolean(myCheckInToday)}
+            onPress={() => router.push('/check-in')}
+          />
+        </Enter>
+        <Enter delay={220}>
+          <DayActionRow
+            title="Diario"
+            hint={
+              lastJournal
+                ? lastJournal.title || lastJournal.body.slice(0, 48)
+                : 'Lo que no va al dúo'
+            }
+            cta="Ir"
+            onPress={() => router.push('/diario')}
+          />
+        </Enter>
+        <Enter delay={260}>
+          <DayActionRow
+            title="Biblia"
+            hint="Libros, capítulos, el texto completo"
+            cta="Ir"
+            onPress={() => router.push('/biblia')}
+          />
+        </Enter>
+        {hasDuo ? (
+          <Enter delay={300}>
+            <DayActionRow
+              title={`Con ${friendName}`}
+              hint="Versículo de los dos, lectura y oración"
+              cta="Ir"
+              onPress={() => router.push('/(tabs)/grupo')}
+            />
+          </Enter>
         ) : null}
       </View>
     </Screen>

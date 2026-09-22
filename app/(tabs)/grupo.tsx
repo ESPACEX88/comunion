@@ -1,4 +1,5 @@
 import { VerseOfDayCard } from '@/components/bible/VerseOfDayCard';
+import { Enter } from '@/components/motion/Enter';
 import { HubEntry } from '@/components/group/HubEntry';
 import { MemberRow } from '@/components/group/MemberRow';
 import { StreakMark } from '@/components/streak/StreakMark';
@@ -53,12 +54,14 @@ export default function GrupoScreen() {
   if (!hasDuo) {
     return (
       <Screen refreshing={refreshing} onRefresh={onRefresh}>
-        <AppText variant="label" tone="olive">
-          Nosotros
-        </AppText>
-        <AppText variant="title" style={{ marginTop: 8 }}>
-          Todavía no hay dúo
-        </AppText>
+        <Enter>
+          <AppText variant="label" tone="olive">
+            Nosotros
+          </AppText>
+          <AppText variant="title" style={{ marginTop: 8 }}>
+            Todavía no hay dúo
+          </AppText>
+        </Enter>
         <Ornament />
         <AppText variant="body" tone="soft">
           Hoy ya es tu espacio. Cuando quieras leer con alguien, creá el dúo o uníte con un código.
@@ -77,23 +80,25 @@ export default function GrupoScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <AppText variant="label" tone="olive">
-        Nosotros
-      </AppText>
-      <AppText variant="title" style={{ marginTop: 8 }}>
-        Vos y {friendName}
-      </AppText>
-      <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-        {live
-          ? specialFriend.id === 'pending'
-            ? `Código ${state.group.inviteCode}. Todavía falta que se una.`
-            : `${state.group.name} · un plan de a dos.`
-          : `${state.group.name}. El dúo es lo íntimo.`}
-      </AppText>
+      <Enter>
+        <AppText variant="label" tone="olive">
+          Nosotros
+        </AppText>
+        <AppText variant="title" style={{ marginTop: 8 }}>
+          Vos y {friendName}
+        </AppText>
+        <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
+          {live
+            ? specialFriend.id === 'pending'
+              ? `Código ${state.group.inviteCode}. Todavía falta que se una.`
+              : `${state.group.name} · un plan de a dos.`
+            : `${state.group.name}. El dúo es lo íntimo.`}
+        </AppText>
+      </Enter>
       <Ornament />
-      <View style={{ marginBottom: space.xl }}>
+      <Enter delay={90} style={{ marginBottom: space.xl }}>
         <VerseOfDayCard reference={sharedRef} kicker="Versículo de los dos" compact />
-      </View>
+      </Enter>
       <StreakMark
         count={groupStreakCount}
         label="Racha compartida"
