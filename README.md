@@ -121,6 +121,16 @@ https://qr.expo.dev/eas-update?slug=exp&projectId=PEGA-EL-PROJECT-ID&runtimeVers
 
 Build nativo (`eas build`) y App Store quedan para cuando haya cuenta de Apple Developer. Este PR no publica nada: hace falta el login de José.
 
+### Si eas update falla en Windows
+
+En Windows `eas update` puede caerse (Hermes / `hermesc`, o la máquina se queda sin memoria al exportar). **Plan B:** publicar desde GitHub Actions en Linux. El workflow se llama **`eas-update-preview`** (solo `workflow_dispatch`: no corre en cada push).
+
+1. Si `eas init` / `eas update:configure` ya escribieron `extra.eas.projectId` y `updates.url` **solo en tu PC**, **commitealos y pusheá a `main`** antes de disparar el Action. Sin esos campos en el repo el job no sabe el `projectId` y falla a propósito.
+2. Creá un access token en [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens) y un secret del repo **`EXPO_TOKEN`**: GitHub → Settings → Secrets and variables → Actions → New repository secret.
+3. GitHub → **Actions** → **eas-update-preview** → **Run workflow** (branch `main`).
+
+Las `EXPO_PUBLIC_*` las carga `--environment preview` desde EAS (environment `preview`). **No** van en el workflow ni en el repo. El job corre `CI=1 eas update --channel preview --non-interactive` en `ubuntu-latest`.
+
 ## Mapa de pantallas
 
 | Ruta | Qué es |
