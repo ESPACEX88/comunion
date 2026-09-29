@@ -333,6 +333,48 @@ export type Database = {
         Update: { avatar_url?: string | null; display_name?: string; updated_at?: string };
         Relationships: [];
       };
+      friend_invites: {
+        Row: {
+          id: string;
+          inviter_id: string;
+          code: string;
+          status: string;
+          used_by: string | null;
+          created_at: string;
+          used_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          inviter_id: string;
+          code: string;
+          status?: string;
+          used_by?: string | null;
+          created_at?: string;
+          used_at?: string | null;
+        };
+        Update: {
+          status?: string;
+          used_by?: string | null;
+          used_at?: string | null;
+        };
+        Relationships: [];
+      };
+      friendships: {
+        Row: {
+          id: string;
+          user_a: string;
+          user_b: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_a: string;
+          user_b: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -349,6 +391,16 @@ export type Database = {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['personal_plans']['Row'];
       };
+      create_friend_invite: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['friend_invites']['Row'];
+      };
+      accept_friend_invite: {
+        Args: { p_code: string };
+        Returns: Database['public']['Tables']['friendships']['Row'];
+      };
+      cancel_friend_invite: { Args: Record<string, never>; Returns: undefined };
+      unfriend: { Args: { p_friend_id: string }; Returns: undefined };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

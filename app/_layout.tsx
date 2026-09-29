@@ -101,6 +101,7 @@ function ThemedRoot() {
                 <Stack.Screen name="check-in" />
                 <Stack.Screen name="recordatorios" />
                 <Stack.Screen name="biblia" />
+                <Stack.Screen name="amigos" />
               </Stack>
             </BibleProvider>
           </ReminderProvider>

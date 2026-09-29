@@ -6,8 +6,10 @@ import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
+import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useBible } from '@/features/bible/BibleProvider';
 import { useBiblePassage } from '@/features/bible/useBiblePassage';
+import { useVerseActions } from '@/features/bible/useVerseActions';
 import type { BiblePassage } from '@/lib/bible/types';
 import { friendlyBibleLoadError } from '@/lib/bible/errors';
 import { space } from '@/theme';
@@ -17,6 +19,7 @@ import { View } from 'react-native';
 
 export default function BibliaLeerScreen() {
   const params = useLocalSearchParams<{ chapter?: string; ref?: string; title?: string }>();
+  const { selfId } = useAppState();
   const { missingKey, ready, bible, loadChapter } = useBible();
   const fromRef = useBiblePassage(params.ref);
   const [fromChapter, setFromChapter] = useState<BiblePassage | null>(null);
@@ -53,6 +56,13 @@ export default function BibliaLeerScreen() {
   const loading = params.ref ? fromRef.loading : chapterLoading;
   const error = params.ref ? fromRef.error : chapterError;
   const heading = passage?.reference || params.ref || params.title || 'Pasaje';
+  const passageKey = passage?.id || params.chapter || params.ref || heading;
+  const verseActions = useVerseActions({
+    userId: selfId,
+    bibleId: passage?.bibleId || bible?.id || 'plan',
+    passageKey,
+    reference: heading,
+  });
 
   return (
     <Screen>
@@ -87,7 +97,16 @@ export default function BibliaLeerScreen() {
         />
       ) : passage && passage.verses.length > 0 ? (
         <View>
-          <VerseList verses={passage.verses} />
+          <VerseList
+            verses={passage.verses}
+            selectedN={verseActions.selectedN}
+            colorsByVerse={verseActions.colorsByVerse}
+            paletteOpen={verseActions.paletteOpen}
+            onSelect={verseActions.onSelect}
+            onCopy={() => void verseActions.onCopy()}
+            onTogglePalette={verseActions.onTogglePalette}
+            onPickColor={verseActions.onPickColor}
+          />
           <AppText variant="caption" tone="soft" style={{ marginTop: space.lg }}>
             {passage.copyright || bible?.copyright || 'Texto vía API.Bible. Uso no comercial.'}
           </AppText>

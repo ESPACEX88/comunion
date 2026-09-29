@@ -4,7 +4,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
-import { SOLO_PSALMS_PLAN } from '@/features/plans/content';
+import { SOLO_PSALMS_PLAN, planCaption } from '@/features/plans/content';
 import { space, useTheme } from '@/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -17,6 +17,8 @@ export default function PlanesScreen() {
     personalPlan,
     todayGroupReading,
     todayPersonalReading,
+    groupProgress,
+    personalProgress,
     ensureSoloPlan,
     openReading,
     openPersonalReading,
@@ -85,9 +87,9 @@ export default function PlanesScreen() {
             {personalTodayStatus === 'completado' ? ' · hoy listo' : ''}
           </AppText>
           <View style={{ marginTop: space.lg }}>
-            <ProgressBar value={day.dayNumber} total={plan.days.length} />
+            <ProgressBar value={personalProgress?.dayNumber ?? day.dayNumber} total={plan.days.length} />
             <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-              Día {day.dayNumber} de {plan.days.length}
+              {personalProgress ? planCaption(personalProgress) : `Día ${day.dayNumber} de ${plan.days.length}`}
             </AppText>
           </View>
           <AppText variant="subtitle" style={{ marginTop: space.xl }}>
@@ -118,9 +120,9 @@ export default function PlanesScreen() {
             {groupPlan.durationLabel} · {state.group.name}
           </AppText>
           <View style={{ marginTop: space.lg }}>
-            <ProgressBar value={todayGroupReading.dayNumber} total={groupPlan.days.length} />
+            <ProgressBar value={groupProgress.dayNumber} total={groupPlan.days.length} />
             <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-              Día {todayGroupReading.dayNumber} de {groupPlan.days.length}
+              {planCaption(groupProgress)}
             </AppText>
           </View>
           <AppText variant="subtitle" style={{ marginTop: space.xl }}>

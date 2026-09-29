@@ -165,14 +165,15 @@ Si cambiaste código: lanzá un **Run workflow nuevo** de `eas-update-preview` (
 | `/onboarding/plan` | Confirmar «Salmos de a dos» |
 | `/(tabs)` **Hoy** | Tu versículo, acciones del día (lectura, check-in, diario, Biblia) |
 | `/check-in` | Check-in personal del día |
-| `/lectura` | Pasaje del día; al completar, check-in y pregunta |
-| `/(tabs)` **Grupo** | **Nosotros**: versículo de los dos, lectura de a dos, oración, mural, código |
-| `/(tabs)` **Planes** | Plan activo de a dos (sembrado en Supabase) |
-| `/(tabs)` **Yo** | Perfil, recordatorios, historial, cerrar sesión |
+| `/lectura` | Pasaje del día; al completar, modal de racha (cerrable) y check-in |
+| `/(tabs)` **Grupo** | **Nosotros**: versículo de los dos, lectura de a dos, oración, mural, amigos, código |
+| `/(tabs)` **Planes** | Plan activo: ciclos de 7 días (Salmos no se congela en el día 7) |
+| `/(tabs)` **Yo** | Perfil, amigos, recordatorios, historial, cerrar sesión |
+| `/amigos` | Red de amigos (aparte del dúo): invitar con código, aceptar, lista, quitar |
 | `/recordatorios` | Avisos locales: Tu momento (mañana) y Juntos (si hay dúo) |
 | `/biblia` | Lector: versión, buscador, libros → capítulos → texto (API.Bible) |
 | `/biblia/versiones` | Selector de edición española |
-| `/biblia/leer` | Capítulo o pasaje del plan (`?ref=Salmo 23`) |
+| `/biblia/leer` | Capítulo o pasaje del plan (`?ref=Salmo 23`). Tocá un versículo: copiar o resaltar |
 
 Flujo con nube: instalar → `.env` → registro de José → crear dúo → compartir código → Ana se registra y se une → check-in / oración / versículo / día del plan se ven en las dos cuentas (RLS: cada una solo ve su dúo).
 
@@ -260,10 +261,28 @@ Los datos sobreviven un reinicio de la app. En **Yo** se pueden borrar para volv
 
 ## Planes de ejemplo
 
-1. **Salmos de a dos** (7 días) — plan dúo por defecto. Referencias reales, extractos cortos en español y una pregunta de conversación cada día (demo, no una edición oficial).
+1. **Salmos de a dos** (7 días por ciclo) — plan dúo por defecto. Cuatro semanas de Salmos distintos; al terminar la 1, abre la 2. Referencias reales, extractos cortos y una pregunta suave cada día.
 2. **El evangelio empieza** (3 días en Juan) — plan personal de muestra. También trae preguntas si se usa como plan de la mesa.
 
-El día del plan se elige por calendario desde la fecha en que se empezó (`planDayForDate` en `features/plans/content.ts`).
+El día del plan se elige por calendario desde la fecha en que se empezó (`planDayForDate` / `planProgress` en `features/plans/content.ts`). **Salmos no se congela en el día 7**: al día siguiente abre un ciclo nuevo (semana 2, 3, 4…) con otros pasajes. El número de día vuelve a 1 de 7.
+
+## Amigos (aparte del dúo)
+
+El dúo sigue siendo la pareja del plan. **Amigos** es una red más ancha.
+
+- Entrada: **Yo → Amigos** y **Nosotros → Amigos**.
+- Vacío: «Aún sin amigos» + **Invitar amigos**.
+- Con sesión: `create_friend_invite` genera un código de 6 letras; se comparte. El otro lo pega y `accept_friend_invite` los deja como amigos.
+- Lista, cancelar pendiente, quitar. Tablas `friend_invites` / `friendships` con RLS en el proyecto `zpjrfxbrfdapoufdvrqr`.
+- Sin cuenta: el CTA lleva a registro. No se mezcla con el código del dúo.
+
+## Racha (modal)
+
+Al marcar el día como leído aparece un overlay con el número, la semana do–sá y **Continuar**. La **X** (y «Cerrar») lo cierran siempre; no bloquea la app. Después, si querés, sigue el check-in.
+
+## Biblia: copiar y resaltar
+
+En el lector, tocá o mantené un versículo. **Copiar** va al portapapeles. **Resaltar** abre una paleta de 6 colores (ámbar, olivo, terracota, oro, arena, lino). Queda en AsyncStorage (`userId` + `bibleId` + pasaje) y sobrevive al reabrir el capítulo.
 
 ## Datos: local vs Supabase
 
@@ -274,6 +293,7 @@ El día del plan se elige por calendario desde la fecha en que se empezó (`plan
 | Check-ins, oraciones, mural, respuestas en JSON | Tablas `check_ins`, `prayers`, `heart_verses`, `plan_answers` |
 | Completados y gracia en JSON | `plan_completions` (`used_grace`) |
 | Plan embebido en la app | Fila por dúo en `plans` + `plan_days`; extracto local + texto completo vía API.Bible si hay key |
+| Amigos (sin sesión: vacío + registro) | `friend_invites`, `friendships` + RPCs `create_friend_invite` / `accept_friend_invite` |
 
 La caché local está en `lib/storage.ts`. Las mutaciones del dúo viven en `lib/supabase-api.ts`.
 

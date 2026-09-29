@@ -2,6 +2,7 @@ import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
 import { VerseList } from '@/components/bible/VerseList';
 import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
 import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
+import { StreakModal } from '@/components/streak/StreakModal';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -11,18 +12,20 @@ import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useBible } from '@/features/bible/BibleProvider';
 import { useBiblePassage } from '@/features/bible/useBiblePassage';
+import { useVerseActions } from '@/features/bible/useVerseActions';
 import { partnerFirstName } from '@/features/duo/labels';
 import { PERSONAL_NOTE_MAX } from '@/features/duo/moods';
-import { isDuoPlan, isPlanFinished } from '@/features/plans/content';
+import { isDuoPlan, planCaption } from '@/features/plans/content';
 import type { MoodId } from '@/lib/types';
 import { radius, space, useTheme } from '@/theme';
+import { weekDaysSunday } from '@/lib/date';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export default function LecturaScreen() {
-  const params = useLocalSearchParams<{ plan?: string }>();
+  const params = useLocalSearchParams<{ plan?: string; shot?: string }>();
   const kind = params.plan === 'personal' ? 'personal' : 'group';
   const {
     state,
@@ -33,6 +36,8 @@ export default function LecturaScreen() {
     personalPlan,
     todayGroupReading,
     todayPersonalReading,
+    groupProgress,
+    personalProgress,
     completeToday,
     completePersonalToday,
     saveCheckIn,
@@ -46,16 +51,16 @@ export default function LecturaScreen() {
     specialFriend,
     hasDuo,
     soloStreak,
+    selfId,
   } = useAppState();
 
   const plan = kind === 'personal' ? personalPlan ?? groupPlan : groupPlan;
   const day = kind === 'personal' ? (todayPersonalReading ?? todayGroupReading) : todayGroupReading;
-  const startDate =
-    kind === 'personal' ? (state.personalPlanStartDate ?? state.groupPlanStartDate) : state.groupPlanStartDate;
-  const finished = isPlanFinished(plan, startDate, today);
+  const progress = kind === 'personal' ? (personalProgress ?? groupProgress) : groupProgress;
   const friendName = partnerFirstName(specialFriend);
 
   const [sheet, setSheet] = useState<'celebrate' | 'quiet' | null>(null);
+  const [streakOpen, setStreakOpen] = useState(params.shot === 'racha');
   const [result, setResult] = useState({ personalStreak: 0, groupStreak: 0, groupJustUnlocked: false });
   const [dayNote, setDayNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -63,6 +68,12 @@ export default function LecturaScreen() {
   const { bible } = useBible();
   const full = useBiblePassage(day.reference);
   const verses = full.passage?.verses.length ? full.passage.verses : day.verses;
+  const verseActions = useVerseActions({
+    userId: selfId,
+    bibleId: bible?.id ?? 'plan',
+    passageKey: day.reference,
+    reference: day.reference,
+  });
 
   useEffect(() => {
     if (kind === 'personal') openPersonalReading();
@@ -116,10 +127,9 @@ export default function LecturaScreen() {
         {day.title}
       </AppText>
       <Ornament />
-      <ProgressBar value={day.dayNumber} total={plan.days.length} />
+      <ProgressBar value={progress.dayNumber} total={progress.cycleLen} />
       <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-        Día {day.dayNumber} de {plan.days.length}
-        {finished ? ' · el calendario del plan ya se cumplió' : ''}
+        {planCaption(progress)}
       </AppText>
       <View style={{ height: space.lg }} />
       {full.missingKey ? (
@@ -139,7 +149,16 @@ export default function LecturaScreen() {
           Extracto del plan. Tocá la referencia para abrir el lector.
         </AppText>
       )}
-      <VerseList verses={verses} />
+      <VerseList
+        verses={verses}
+        selectedN={verseActions.selectedN}
+        colorsByVerse={verseActions.colorsByVerse}
+        paletteOpen={verseActions.paletteOpen}
+        onSelect={verseActions.onSelect}
+        onCopy={() => void verseActions.onCopy()}
+        onTogglePalette={verseActions.onTogglePalette}
+        onPickColor={verseActions.onPickColor}
+      />
       <View
         style={{
           marginTop: space.sm,
@@ -180,7 +199,7 @@ export default function LecturaScreen() {
               const next = await completeToday();
               setResult(next);
             }
-            setSheet('celebrate');
+            setStreakOpen(true);
             try {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
@@ -219,6 +238,29 @@ export default function LecturaScreen() {
           />
         </View>
       ) : null}
+      <StreakModal
+        visible={streakOpen}
+        streak={
+          params.shot === 'racha'
+            ? 11
+            : kind === 'personal'
+              ? result.personalStreak || soloStreak
+              : result.personalStreak
+        }
+        today={today}
+        completedDays={
+          params.shot === 'racha'
+            ? weekDaysSunday(today).slice(0, 3)
+            : kind === 'personal'
+              ? state.personalCompletedDates
+              : state.userCompletedDates
+        }
+        onContinue={() => {
+          setStreakOpen(false);
+          setSheet('celebrate');
+        }}
+        onClose={() => setStreakOpen(false)}
+      />
       <AfterReadingSheet
         visible={sheet !== null}
         variant={sheet === 'quiet' ? 'quiet' : 'celebrate'}
