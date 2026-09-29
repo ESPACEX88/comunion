@@ -75,6 +75,12 @@ export function useVerseActions(opts: {
     [map, passageKey, persist, selected],
   );
 
+  const clear = useCallback(() => {
+    setSelected(null);
+    setPaletteOpen(false);
+    setCopied(false);
+  }, []);
+
   const colorsByVerse = useMemo(() => map[passageKey] ?? {}, [map, passageKey]);
 
   return {
@@ -86,5 +92,6 @@ export function useVerseActions(opts: {
     onCopy,
     onTogglePalette,
     onPickColor,
+    clear,
   };
 }

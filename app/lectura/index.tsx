@@ -1,5 +1,5 @@
 import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
-import { VerseList } from '@/components/bible/VerseList';
+import { VerseList, VerseActionBar } from '@/components/bible/VerseList';
 import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
 import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
 import { StreakModal } from '@/components/streak/StreakModal';
@@ -106,7 +106,20 @@ export default function LecturaScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        verseActions.selectedN != null ? (
+          <VerseActionBar
+            selectedN={verseActions.selectedN}
+            paletteOpen={verseActions.paletteOpen}
+            copied={verseActions.copied}
+            onCopy={() => void verseActions.onCopy()}
+            onTogglePalette={verseActions.onTogglePalette}
+            onPickColor={verseActions.onPickColor}
+            onClose={verseActions.clear}
+          />
+        ) : null
+      }>
       <Pressable onPress={() => router.back()} hitSlop={12}>
         <AppText variant="label" tone="amber">
           ← Volver
@@ -153,11 +166,7 @@ export default function LecturaScreen() {
         verses={verses}
         selectedN={verseActions.selectedN}
         colorsByVerse={verseActions.colorsByVerse}
-        paletteOpen={verseActions.paletteOpen}
         onSelect={verseActions.onSelect}
-        onCopy={() => void verseActions.onCopy()}
-        onTogglePalette={verseActions.onTogglePalette}
-        onPickColor={verseActions.onPickColor}
       />
       <View
         style={{
