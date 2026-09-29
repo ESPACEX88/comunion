@@ -5,7 +5,6 @@ import { AppText } from '@/components/ui/AppText';
 import { BackLink } from '@/components/ui/BackLink';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
-import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import {
@@ -151,61 +150,117 @@ export default function AmigosScreen() {
     <Screen>
       <BackLink label="Volver" />
       <Enter>
-        <AppText variant="label" tone="olive" style={{ marginTop: space.lg }}>
-          Amigos
-        </AppText>
-        <AppText variant="title" style={{ marginTop: 8 }}>
-          {visibleFriends.length === 0 ? 'Aún sin amigos' : 'Tu red'}
-        </AppText>
+        <View
+          style={{
+            marginTop: space.lg,
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: space.md,
+          }}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="label" tone="olive">
+              Amigos
+            </AppText>
+            <AppText variant="title" style={{ marginTop: 6 }}>
+              {visibleFriends.length === 0 ? 'Aún sin amigos' : 'Tu red'}
+            </AppText>
+          </View>
+        </View>
         <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-          El dúo sigue siendo la pareja del plan. Acá es más ancho: un código, un sí, y quedan.
+          El dúo es de a dos. Acá invitás con un código.
         </AppText>
       </Enter>
-      <Ornament />
 
-      {visibleFriends.length === 0 ? (
-        <Enter delay={80}>
+      <Enter delay={70}>
+        <Button
+          label={busy ? 'Un segundo…' : 'Invitar amigos'}
+          style={{ marginTop: space.lg }}
+          disabled={busy}
+          onPress={() => void inviteSomeone()}
+        />
+      </Enter>
+
+      <Enter delay={110}>
+        <AppText variant="label" tone="amber" style={{ marginTop: space.lg }}>
+          Tengo un código
+        </AppText>
+        <Field
+          value={code}
+          onChangeText={(value) => setCode(value.toUpperCase())}
+          placeholder="Código"
+          autoCapitalize="characters"
+          autoCorrect={false}
+          autoComplete="off"
+          accessibilityLabel="Código de amigo"
+        />
+        <Button
+          label={busy ? 'Un segundo…' : 'Aceptar invitación'}
+          variant="olive"
+          style={{ marginTop: space.md }}
+          disabled={busy}
+          onPress={() => void joinWithCode()}
+        />
+      </Enter>
+
+      {invite ? (
+        <Enter delay={140}>
           <View
             style={{
-              paddingVertical: space.xxl,
-              paddingHorizontal: space.md,
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: colors.line,
+              marginTop: space.lg,
+              padding: space.md,
               borderRadius: radius.lg,
-              backgroundColor: colors.paper,
+              backgroundColor: colors.creamDeep,
             }}>
-            <View
-              style={{
-                width: 12,
-                height: 12,
-                backgroundColor: colors.amber,
-                transform: [{ rotate: '45deg' }],
-                marginBottom: space.md,
-              }}
-            />
-            <AppText variant="subtitle" style={{ textAlign: 'center' }}>
-              Aún sin amigos
+            <AppText variant="label" tone="amber">
+              Invitación pendiente
             </AppText>
-            <AppText variant="body" tone="soft" style={{ marginTop: 8, textAlign: 'center' }}>
-              {needAccount
-                ? 'Con tu cuenta podés invitar. El otro entra el código y queda.'
-                : 'Compartí un código. Cuando lo acepten, aparecen acá.'}
+            <AppText variant="subtitle" style={{ marginTop: 6 }}>
+              {invite.code}
             </AppText>
-            <Button
-              label={busy ? 'Un segundo…' : 'Invitar amigos'}
-              style={{ marginTop: space.xl, alignSelf: 'stretch' }}
-              disabled={busy}
-              onPress={() => void inviteSomeone()}
-            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: space.sm }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label={copied ? 'Copiado' : 'Copiar'}
+                  variant="ghost"
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(invite.code);
+                    setCopied(true);
+                  }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Cancelar" variant="ghost" disabled={busy} onPress={() => void cancelPending()} />
+              </View>
+            </View>
           </View>
         </Enter>
+      ) : null}
+
+      {error ? (
+        <AppText variant="ui" style={{ marginTop: space.md, color: colors.terracotta }}>
+          {error}
+        </AppText>
+      ) : null}
+      {info ? (
+        <AppText variant="ui" tone="olive" style={{ marginTop: space.md }}>
+          {info}
+        </AppText>
+      ) : null}
+
+      {visibleFriends.length === 0 ? (
+        <Enter delay={180}>
+          <AppText variant="caption" tone="soft" style={{ marginTop: space.xl }}>
+            {needAccount
+              ? 'Con tu cuenta el otro entra el código y queda.'
+              : 'Cuando acepten el tuyo, aparecen acá.'}
+          </AppText>
+        </Enter>
       ) : (
-        <Enter delay={80}>
-          <View style={{ gap: 4 }}>
-            {visibleFriends.map((friend) => (
+        <View style={{ marginTop: space.xl }}>
+          {visibleFriends.map((friend, index) => (
+            <Enter key={friend.id} delay={160 + index * 40}>
               <View
-                key={friend.id}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -227,81 +282,10 @@ export default function AmigosScreen() {
                   </AppText>
                 </PressScale>
               </View>
-            ))}
-          </View>
-          <Button
-            label={busy ? 'Un segundo…' : 'Invitar a otro'}
-            variant="ghost"
-            style={{ marginTop: space.lg }}
-            disabled={busy}
-            onPress={() => void inviteSomeone()}
-          />
-        </Enter>
-      )}
-
-      {invite ? (
-        <View
-          style={{
-            marginTop: space.xl,
-            padding: space.md,
-            borderRadius: radius.lg,
-            backgroundColor: colors.creamDeep,
-          }}>
-          <AppText variant="label" tone="amber">
-            Invitación pendiente
-          </AppText>
-          <AppText variant="title" style={{ marginTop: 8 }}>
-            {invite.code}
-          </AppText>
-          <AppText variant="caption" tone="soft" style={{ marginTop: 4 }}>
-            Todavía no la usaron. Podés copiarla o cancelarla.
-          </AppText>
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: space.md }}>
-            <View style={{ flex: 1 }}>
-              <Button
-                label={copied ? 'Copiado' : 'Copiar código'}
-                variant="ghost"
-                onPress={async () => {
-                  await Clipboard.setStringAsync(invite.code);
-                  setCopied(true);
-                }}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button label="Cancelar" variant="ghost" disabled={busy} onPress={() => void cancelPending()} />
-            </View>
-          </View>
+            </Enter>
+          ))}
         </View>
-      ) : null}
-
-      <AppText variant="label" tone="amber" style={{ marginTop: space.xl }}>
-        Tengo un código
-      </AppText>
-      <Field
-        value={code}
-        onChangeText={(value) => setCode(value.toUpperCase())}
-        placeholder="Código"
-        autoCapitalize="characters"
-        autoCorrect={false}
-        accessibilityLabel="Código de amigo"
-      />
-      <Button
-        label={busy ? 'Un segundo…' : 'Aceptar invitación'}
-        variant="olive"
-        style={{ marginTop: space.md }}
-        disabled={busy}
-        onPress={() => void joinWithCode()}
-      />
-      {error ? (
-        <AppText variant="ui" style={{ marginTop: space.md, color: colors.terracotta }}>
-          {error}
-        </AppText>
-      ) : null}
-      {info ? (
-        <AppText variant="ui" tone="olive" style={{ marginTop: space.md }}>
-          {info}
-        </AppText>
-      ) : null}
+      )}
     </Screen>
   );
 }

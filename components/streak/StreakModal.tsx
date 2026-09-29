@@ -4,6 +4,7 @@ import { PressScale } from '@/components/motion/PressScale';
 import { WEEKDAY_SUN_LABELS, weekDaysSunday } from '@/lib/date';
 import { radius, space, useTheme } from '@/theme';
 import { Modal, Pressable, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 
 type Props = {
   visible: boolean;
@@ -20,8 +21,10 @@ export function StreakModal({ visible, streak, today, completedDays, onContinue,
   const days = weekDaysSunday(today);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      <Animated.View
+        entering={FadeIn.duration(220)}
+        exiting={FadeOut.duration(160)}
         style={{
           flex: 1,
           backgroundColor: colors.overlay,
@@ -29,7 +32,9 @@ export function StreakModal({ visible, streak, today, completedDays, onContinue,
           justifyContent: 'center',
           paddingHorizontal: space.lg,
         }}>
-        <View
+        <Animated.View
+          entering={FadeInDown.duration(380).springify().damping(18).stiffness(200)}
+          exiting={FadeOut.duration(140)}
           style={{
             width: '100%',
             maxWidth: 400,
@@ -140,8 +145,8 @@ export function StreakModal({ visible, streak, today, completedDays, onContinue,
               Cerrar
             </AppText>
           </Pressable>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }

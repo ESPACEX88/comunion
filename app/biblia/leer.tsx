@@ -1,6 +1,6 @@
 import { BibleWarm } from '@/components/bible/BibleWarm';
 import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
-import { VerseList } from '@/components/bible/VerseList';
+import { VerseList, VerseActionBar } from '@/components/bible/VerseList';
 import { BackLink } from '@/components/ui/BackLink';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -65,7 +65,20 @@ export default function BibliaLeerScreen() {
   });
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        verseActions.selectedN != null ? (
+          <VerseActionBar
+            selectedN={verseActions.selectedN}
+            paletteOpen={verseActions.paletteOpen}
+            copied={verseActions.copied}
+            onCopy={() => void verseActions.onCopy()}
+            onTogglePalette={verseActions.onTogglePalette}
+            onPickColor={verseActions.onPickColor}
+            onClose={verseActions.clear}
+          />
+        ) : null
+      }>
       <BackLink />
       <AppText variant="label" tone="olive" style={{ marginTop: space.lg }}>
         {bible?.abbreviation || 'Biblia'}
@@ -101,11 +114,7 @@ export default function BibliaLeerScreen() {
             verses={passage.verses}
             selectedN={verseActions.selectedN}
             colorsByVerse={verseActions.colorsByVerse}
-            paletteOpen={verseActions.paletteOpen}
             onSelect={verseActions.onSelect}
-            onCopy={() => void verseActions.onCopy()}
-            onTogglePalette={verseActions.onTogglePalette}
-            onPickColor={verseActions.onPickColor}
           />
           <AppText variant="caption" tone="soft" style={{ marginTop: space.lg }}>
             {passage.copyright || bible?.copyright || 'Texto vía API.Bible. Uso no comercial.'}
