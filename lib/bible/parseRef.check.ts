@@ -71,6 +71,11 @@ const startIso = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22T00:00:00.000Z', '2
 assert(startIso.dayNumber === 1, 'starts_on ISO no se atrasa');
 const dayTwo = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-21', '2026-09-22');
 assert(dayTwo.dayNumber === 2, 'ayer empezó, hoy es día 2');
+const dayEight = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22', '2026-09-29');
+assert(dayEight.dayNumber === 1 && dayEight.reference === 'Salmo 8', 'después del día 7, ciclo nuevo');
+assert(dayEight.reference !== 'Salmo 139', 'no se queda en el Salmo 139');
+const stillDaySeven = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22', '2026-09-28');
+assert(stillDaySeven.reference === 'Salmo 139', 'día 7 sigue siendo 139');
 
 const tls = new Error(
   'fetch failed: UnexpectedException: A TLS error caused the secure connection to fail. (at ExpoModulesCore/Promise.swift:56)',

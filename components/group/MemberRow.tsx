@@ -61,19 +61,19 @@ export function MemberRow({ member, completed }: Props) {
   );
 }
 
-export function Avatar({ name, hue }: { name: string; hue: Member['hue'] }) {
+export function Avatar({ name, hue, size = 64 }: { name: string; hue: Member['hue']; size?: number }) {
   const { colors } = useTheme();
   return (
     <View
       style={{
-        width: 64,
-        height: 64,
-        borderRadius: radius.lg,
+        width: size,
+        height: size,
+        borderRadius: size > 48 ? radius.lg : size / 2,
         backgroundColor: memberHues[hue],
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-      <AppText variant="title" style={{ color: colors.white }}>
+      <AppText variant={size > 48 ? 'title' : 'ui'} style={{ color: colors.white }}>
         {initials(name)}
       </AppText>
     </View>

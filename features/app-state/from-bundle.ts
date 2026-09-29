@@ -1,5 +1,5 @@
 import { asMood } from '@/features/duo/moods';
-import { PSALMS_PLAN, PSALMS_PLAN_ID, SOLO_PSALMS_PLAN, getPlan } from '@/features/plans/content';
+import { PSALMS_PLAN, PSALMS_PLAN_ID, SOLO_PSALMS_PLAN, getPlan, planDayAtAbsolute } from '@/features/plans/content';
 import { asDayKey } from '@/lib/date';
 import type { DuoBundle, RemotePersonalDay, RemotePersonalPlan } from '@/lib/supabase-api';
 import type { CheckIn, DuoAnswer, HeartVerse, PersistedState, Plan, PrayerRequest } from '@/lib/types';
@@ -93,13 +93,14 @@ export function bundleToState(prev: PersistedState, bundle: DuoBundle, userId: s
   }));
 
   const duoAnswers: DuoAnswer[] = bundle.answers.map((row) => {
-    const catalogDay = (getPlan(PSALMS_PLAN_ID) ?? PSALMS_PLAN).days.find((day) => day.dayNumber === row.dayNumber);
+    const catalog = getPlan(PSALMS_PLAN_ID) ?? PSALMS_PLAN;
+    const catalogDay = planDayAtAbsolute(catalog, row.dayNumber);
     return {
       id: `${row.userId}-${row.dayNumber}`,
       authorId: row.userId,
       date: bundle.plan?.startsOn ?? prev.groupPlanStartDate,
-      planDayId: catalogDay?.id ?? `day-${row.dayNumber}`,
-      question: catalogDay?.prompt ?? '',
+      planDayId: catalogDay.id,
+      question: catalogDay.prompt ?? '',
       text: row.answer,
     };
   });

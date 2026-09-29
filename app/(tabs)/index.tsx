@@ -9,6 +9,7 @@ import { moodLabel } from '@/features/duo/moods';
 import { partnerFirstName } from '@/features/duo/labels';
 import { personalVerseOfDayRef } from '@/lib/bible/verseOfDay';
 import { formatLongDate, greeting } from '@/lib/date';
+import { planCaption } from '@/features/plans/content';
 import { space, useTheme } from '@/theme';
 import { router } from 'expo-router';
 import { View } from 'react-native';
@@ -20,6 +21,7 @@ export default function HoyScreen() {
     personalTodayStatus,
     todayPersonalReading,
     personalPlan,
+    personalProgress,
     ensureSoloPlan,
     openPersonalReading,
     myCheckInToday,
@@ -38,7 +40,7 @@ export default function HoyScreen() {
     name: state.userName,
   });
   const readingHint = todayPersonalReading
-    ? `${todayPersonalReading.reference} · día ${todayPersonalReading.dayNumber} de ${personalPlan?.days.length ?? 7}`
+    ? `${todayPersonalReading.reference} · ${personalProgress ? planCaption(personalProgress) : `día ${todayPersonalReading.dayNumber}`}`
     : 'Salmos, siete días. Para vos.';
   const readingDone = personalTodayStatus === 'completado';
 

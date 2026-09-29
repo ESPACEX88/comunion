@@ -61,6 +61,20 @@ export function weekStartMonday(dayKey: string): string {
   return toDayKey(date);
 }
 
+/** Domingo de la semana do–sá que contiene dayKey. */
+export function weekStartSunday(dayKey: string): string {
+  const date = parseDayKey(dayKey);
+  date.setDate(date.getDate() - date.getDay());
+  return toDayKey(date);
+}
+
+export const WEEKDAY_SUN_LABELS = ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sá'] as const;
+
+export function weekDaysSunday(dayKey: string): string[] {
+  const start = weekStartSunday(dayKey);
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+
 export function sameWeek(a: string, b: string): boolean {
   return weekStartMonday(a) === weekStartMonday(b);
 }

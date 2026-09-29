@@ -11,6 +11,7 @@ import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { partnerFirstName } from '@/features/duo/labels';
 import { sharedVerseOfDayRef } from '@/lib/bible/verseOfDay';
+import { planCaption } from '@/features/plans/content';
 import { space } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
@@ -34,6 +35,7 @@ export default function GrupoScreen() {
     today,
     todayGroupReading,
     groupPlan,
+    groupProgress,
     todayStatus,
     openReading,
   } = useAppState();
@@ -68,6 +70,12 @@ export default function GrupoScreen() {
         </AppText>
         <View style={{ height: space.xl }} />
         <Button label="Crear o unirme a un dúo" onPress={() => router.push('/onboarding/grupo')} />
+        <Button
+          label="Amigos"
+          variant="ghost"
+          style={{ marginTop: 10 }}
+          onPress={() => router.push('/amigos')}
+        />
         <Button
           label="Volver a Hoy"
           variant="ghost"
@@ -116,7 +124,7 @@ export default function GrupoScreen() {
           hint={
             todayStatus === 'completado'
               ? `Hoy ya leyeron ${todayGroupReading.title.toLowerCase()}.`
-              : `${groupPlan.title} · día ${todayGroupReading.dayNumber} de ${groupPlan.days.length}`
+              : `${groupPlan.title} · ${planCaption(groupProgress)}`
           }
           onPress={() => {
             openReading();
@@ -150,6 +158,12 @@ export default function GrupoScreen() {
           title="Check-ins y la pregunta"
           hint={checkInHint}
           onPress={() => router.push('/nosotros/checkins')}
+        />
+        <HubEntry
+          kicker="Amigos"
+          title="Tu red, más ancha"
+          hint="El dúo es de a dos. Los amigos se suman con un código."
+          onPress={() => router.push('/amigos')}
         />
       </View>
       <View style={{ marginTop: space.xl }}>

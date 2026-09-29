@@ -14,7 +14,8 @@ import {
   isDuoPlan,
   makeInviteCode,
   newId,
-  planDayForDate,
+  planProgress,
+  type PlanProgress,
 } from '@/features/plans/content';
 import { dataSource } from '@/lib/data-source';
 import { getSupabase } from '@/lib/supabase';
@@ -156,6 +157,8 @@ type AppContextValue = {
   personalPlan: Plan | null;
   todayGroupReading: PlanDay;
   todayPersonalReading: PlanDay | null;
+  groupProgress: PlanProgress;
+  personalProgress: PlanProgress | null;
   isDuoActive: boolean;
   grace: GraceOffer;
   myDuoAnswerToday: DuoAnswer | null;
@@ -450,11 +453,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const personalPlan =
     livePersonalPlan ??
     (state.personalPlanId ? (getPlan(state.personalPlanId) ?? SOLO_PSALMS_PLAN) : null);
-  const todayGroupReading = planDayForDate(groupPlan, state.groupPlanStartDate, today);
-  const todayPersonalReading =
+  const groupProgress = planProgress(groupPlan, state.groupPlanStartDate, today);
+  const todayGroupReading = groupProgress.day;
+  const personalProgress =
     personalPlan && state.personalPlanStartDate
-      ? planDayForDate(personalPlan, state.personalPlanStartDate, today)
+      ? planProgress(personalPlan, state.personalPlanStartDate, today)
       : null;
+  const todayPersonalReading = personalProgress?.day ?? null;
 
   const specialFriend = members.find((member) => member.isSpecialFriend) ?? pendingFriend;
 
@@ -632,7 +637,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     if (user && state.remoteDuoId) {
       const duoId = state.remoteDuoId;
-      const dayNumber = todayGroupReading.dayNumber;
+      const dayNumber = groupProgress.absoluteDay;
       await enqueueLiveWrite(async () => {
         try {
           const planId = state.remotePlanId ?? (await ensurePsalmsPlan(duoId));
@@ -663,7 +668,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     state.remotePlanId,
     state.userCompletedDates,
     today,
-    todayGroupReading.dayNumber,
+    groupProgress.absoluteDay,
     user,
   ]);
 
@@ -672,7 +677,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const dates = withDate(state.personalCompletedDates, today);
       const nextSolo = consecutiveStreakWithGrace(dates, today, []);
       const clipped = (note ?? '').trim().slice(0, PERSONAL_NOTE_MAX);
-      const dayNumber = todayPersonalReading?.dayNumber ?? 1;
+      const dayNumber = personalProgress?.absoluteDay ?? 1;
 
       setState((prev) => ({
         ...prev,
@@ -706,7 +711,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       state.personalCompletedDates,
       state.remotePersonalPlanId,
       today,
-      todayPersonalReading?.dayNumber,
+      personalProgress?.absoluteDay,
       user,
     ],
   );
@@ -936,7 +941,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             await upsertPlanAnswer({
               planId,
               userId: user.id,
-              dayNumber: todayGroupReading.dayNumber,
+              dayNumber: groupProgress.absoluteDay,
               answer: clipped,
             });
             await refreshLiveNow();
@@ -953,7 +958,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       state.remoteDuoId,
       state.remotePlanId,
       today,
-      todayGroupReading.dayNumber,
+      groupProgress.absoluteDay,
       todayGroupReading.id,
       todayGroupReading.prompt,
       user,
@@ -967,14 +972,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return { ...prev, graceDates: [...prev.graceDates, gap] };
     });
     if (user && state.remoteDuoId) {
-      const gapDay = planDayForDate(groupPlan, state.groupPlanStartDate, gap);
+      const gapProgress = planProgress(groupPlan, state.groupPlanStartDate, gap);
       void enqueueLiveWrite(async () => {
         try {
           const planId = state.remotePlanId ?? (await ensurePsalmsPlan(state.remoteDuoId!));
           await upsertCompletion({
             planId,
             userId: user.id,
-            dayNumber: gapDay.dayNumber,
+            dayNumber: gapProgress.absoluteDay,
             completedOn: gap,
             usedGrace: true,
           });
@@ -1106,6 +1111,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     personalPlan,
     todayGroupReading,
     todayPersonalReading,
+    groupProgress,
+    personalProgress,
     isDuoActive,
     grace,
     myDuoAnswerToday,

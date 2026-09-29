@@ -115,6 +115,12 @@ export default function YoScreen() {
           }
           onPress={() => router.push('/recordatorios')}
         />
+        <HubEntry
+          kicker="Amigos"
+          title="Tu red"
+          hint="Más ancha que el dúo. Un código, un sí."
+          onPress={() => router.push('/amigos')}
+        />
         {!hasDuo ? (
           <HubEntry
             kicker="Dúo"
