@@ -82,14 +82,15 @@ export function VerseList({
             Versículo {selectedN}
           </AppText>
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <ActionChip label="Copiar" onPress={onCopy} />
-            <ActionChip label="Resaltar" onPress={onTogglePalette} active={paletteOpen} />
+            <ActionChip label="Copiar" onPress={onCopy} testID="verse-copy" />
+            <ActionChip label="Resaltar" onPress={onTogglePalette} active={paletteOpen} testID="verse-highlight" />
           </View>
           {paletteOpen ? (
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
               {HIGHLIGHT_SWATCHES.map((swatch) => (
                 <PressScale
                   key={swatch.id}
+                  testID={`highlight-color-${swatch.id}`}
                   onPress={() => onPickColor(swatch.id)}
                   accessibilityRole="button"
                   accessibilityLabel={swatch.label}>
@@ -121,14 +122,16 @@ function ActionChip({
   label,
   onPress,
   active,
+  testID,
 }: {
   label: string;
   onPress: () => void;
   active?: boolean;
+  testID?: string;
 }) {
   const { colors } = useTheme();
   return (
-    <PressScale onPress={onPress} accessibilityRole="button">
+    <PressScale onPress={onPress} accessibilityRole="button" testID={testID}>
       <View
         style={{
           paddingVertical: 8,
