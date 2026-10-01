@@ -1,3 +1,4 @@
+import { AuroraBackground } from '@/components/ui/Aurora';
 import { space, useTheme } from '@/theme';
 import { type ReactNode } from 'react';
 import {
@@ -18,8 +19,8 @@ type Props = {
   style?: StyleProp<ViewStyle>;
   refreshing?: boolean;
   onRefresh?: () => void;
-  /** Barra fija al pie del viewport (absolute). Nunca viaja con el ScrollView. */
   footer?: ReactNode;
+  aurora?: boolean;
 };
 
 export function Screen({
@@ -30,11 +31,12 @@ export function Screen({
   refreshing,
   onRefresh,
   footer,
+  aurora = true,
 }: Props) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const padding = {
-    paddingHorizontal: padded ? space.lg : 0,
+    paddingHorizontal: padded ? 20 : 0,
     paddingTop: space.lg,
     paddingBottom: footer ? 148 : space.xxl,
   };
@@ -54,7 +56,7 @@ export function Screen({
             onRefresh={onRefresh}
             tintColor={colors.amber}
             colors={[colors.amber]}
-            progressBackgroundColor={colors.paper}
+            progressBackgroundColor={colors.creamDeep}
           />
         ) : undefined
       }>
@@ -66,6 +68,7 @@ export function Screen({
 
   return (
     <View style={[{ flex: 1, backgroundColor: colors.cream, paddingTop: insets.top }, style]}>
+      {aurora ? <AuroraBackground /> : null}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}

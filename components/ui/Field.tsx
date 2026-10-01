@@ -13,10 +13,10 @@ export function Field({ tall, style, ...rest }: Props) {
       style={[
         {
           marginTop: space.sm,
-          backgroundColor: colors.paper,
+          backgroundColor: colors.glass,
           borderWidth: 1,
-          borderColor: colors.line,
-          borderRadius: radius.lg,
+          borderColor: colors.glassBorder,
+          borderRadius: radius.xl,
           paddingHorizontal: space.md,
           paddingVertical: tall ? space.md : 16,
           minHeight: tall ? 72 : undefined,

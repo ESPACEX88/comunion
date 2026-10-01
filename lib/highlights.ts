@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const HIGHLIGHT_SWATCHES = [
-  { id: 'amber', label: 'Ámbar', paint: 'rgba(232, 196, 138, 0.62)', chip: '#E8C48A' },
-  { id: 'olive', label: 'Olivo', paint: 'rgba(138, 148, 111, 0.45)', chip: '#8A946F' },
-  { id: 'rose', label: 'Terracota', paint: 'rgba(166, 93, 70, 0.32)', chip: '#A65D46' },
-  { id: 'gold', label: 'Oro', paint: 'rgba(196, 123, 42, 0.32)', chip: '#C47B2A' },
-  { id: 'sand', label: 'Arena', paint: 'rgba(92, 83, 72, 0.2)', chip: '#5C5348' },
-  { id: 'linen', label: 'Lino', paint: 'rgba(243, 222, 192, 0.85)', chip: '#F3DEC0' },
+  { id: 'amber', label: 'Ámbar', paint: 'rgba(250, 204, 21, 0.35)', chip: '#FACC15' },
+  { id: 'olive', label: 'Olivo', paint: 'rgba(74, 222, 128, 0.28)', chip: '#4ADE80' },
+  { id: 'rose', label: 'Rosa', paint: 'rgba(244, 114, 182, 0.28)', chip: '#F472B6' },
+  { id: 'gold', label: 'Oro', paint: 'rgba(251, 146, 60, 0.32)', chip: '#FB923C' },
+  { id: 'sand', label: 'Cielo', paint: 'rgba(34, 211, 238, 0.28)', chip: '#22D3EE' },
+  { id: 'linen', label: 'Lila', paint: 'rgba(167, 139, 250, 0.32)', chip: '#A78BFA' },
 ] as const;
 
 export type HighlightColorId = (typeof HIGHLIGHT_SWATCHES)[number]['id'];

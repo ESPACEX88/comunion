@@ -1,8 +1,9 @@
 import { HIGHLIGHT_SWATCHES, highlightPaint, type HighlightColorId } from '@/lib/highlights';
 import { AppText } from '@/components/ui/AppText';
+import { Button } from '@/components/ui/Button';
 import { PressScale } from '@/components/motion/PressScale';
 import type { BibleVerse } from '@/lib/bible/types';
-import { radius, space, useTheme } from '@/theme';
+import { space, useTheme } from '@/theme';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 
@@ -20,8 +21,8 @@ export function VerseList({ verses, selectedNs, colorsByVerse, onSelect }: ListP
   return (
     <View>
       {selectedNs.length === 0 ? (
-        <AppText variant="caption" tone="soft" style={{ marginBottom: space.sm }}>
-          Tocá uno o varios versículos. La barra queda abajo, fija.
+        <AppText variant="caption" tone="soft" style={{ marginBottom: space.md, letterSpacing: 0 }}>
+          Seleccioná varios · barra fija abajo
         </AppText>
       ) : null}
       {verses.map((verse) => {
@@ -41,20 +42,29 @@ export function VerseList({ verses, selectedNs, colorsByVerse, onSelect }: ListP
             <View
               style={{
                 flexDirection: 'row',
-                gap: 14,
-                marginBottom: 10,
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-                marginHorizontal: -10,
-                borderRadius: radius.lg,
-                backgroundColor: paint ?? (selected ? colors.creamDeep : 'transparent'),
+                gap: 12,
+                marginBottom: 12,
+                paddingVertical: selected ? 12 : 4,
+                paddingHorizontal: selected ? 12 : 0,
+                borderRadius: 18,
+                backgroundColor: paint ?? (selected ? 'rgba(251, 191, 36, 0.12)' : 'transparent'),
                 borderWidth: selected ? 1.5 : 0,
-                borderColor: colors.amberSoft,
+                borderColor: 'rgba(251, 191, 36, 0.5)',
               }}>
-              <AppText variant="caption" tone="amber" style={{ width: 22, marginTop: 6 }}>
-                {verse.n}
-              </AppText>
-              <AppText variant="verse" style={{ flex: 1 }}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 10,
+                  backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <AppText variant="caption" style={{ color: colors.amber, letterSpacing: 0, fontWeight: '700' }}>
+                  {verse.n}
+                </AppText>
+              </View>
+              <AppText variant="verse" style={{ flex: 1, color: selected ? colors.ink : colors.charcoalSoft }}>
                 {verse.text}
               </AppText>
             </View>
@@ -75,7 +85,6 @@ type BarProps = {
   onClose: () => void;
 };
 
-/** Barra flotante fija al pie del viewport. Nunca al final del capítulo. */
 export function VerseActionBar({
   selectedCount,
   paletteOpen,
@@ -86,8 +95,7 @@ export function VerseActionBar({
   onClose,
 }: BarProps) {
   const { colors } = useTheme();
-  const countLabel =
-    selectedCount === 1 ? '1 versículo' : `${selectedCount} versículos`;
+  const countLabel = selectedCount === 1 ? '1 seleccionado' : `${selectedCount} seleccionados`;
 
   return (
     <Animated.View
@@ -96,46 +104,46 @@ export function VerseActionBar({
       testID="verse-action-bar"
       nativeID="verse-action-bar"
       style={{
-        marginHorizontal: space.md,
-        padding: space.md,
-        borderRadius: radius.xl,
-        backgroundColor: colors.paper,
+        marginHorizontal: 16,
+        padding: 14,
+        borderRadius: 24,
+        backgroundColor: colors.creamDeep,
         borderWidth: 1,
-        borderColor: colors.line,
-        gap: space.sm,
+        borderColor: colors.glassBorder,
+        gap: 12,
         shadowColor: '#000',
-        shadowOpacity: 0.22,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 12,
+        shadowOpacity: 0.5,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 16 },
+        elevation: 16,
       }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <AppText variant="label" tone="amber">
-          {countLabel} seleccionados
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <AppText variant="caption" tone="amber" style={{ letterSpacing: 0.4 }}>
+          {countLabel}
         </AppText>
-        <PressScale
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Descartar"
-          testID="verse-discard">
-          <AppText variant="ui" tone="soft">
-            Descartar
-          </AppText>
-        </PressScale>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <View>
+            <Button label={copied ? 'Copiado' : 'Copiar'} variant="ghost" compact onPress={onCopy} testID="verse-copy" />
+          </View>
+          <View>
+            <Button
+              label="Resaltar"
+              compact
+              onPress={onTogglePalette}
+              testID="verse-highlight"
+            />
+          </View>
+        </View>
       </View>
-      <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-        <ActionChip label={copied ? 'Copiado' : 'Copiar'} onPress={onCopy} testID="verse-copy" />
-        <ActionChip
-          label="Resaltar"
-          onPress={onTogglePalette}
-          active={paletteOpen}
-          testID="verse-highlight"
-        />
-      </View>
-      {paletteOpen ? (
+      <PressScale onPress={onClose} testID="verse-discard" accessibilityRole="button">
+        <AppText variant="caption" tone="soft" style={{ letterSpacing: 0 }}>
+          Descartar
+        </AppText>
+      </PressScale>
+      {(paletteOpen || selectedCount > 0) ? (
         <Animated.View
           entering={FadeIn.duration(180)}
-          style={{ flexDirection: 'row', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+          style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {HIGHLIGHT_SWATCHES.map((swatch) => (
             <PressScale
               key={swatch.id}
@@ -145,12 +153,12 @@ export function VerseActionBar({
               accessibilityLabel={swatch.label}>
               <View
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
+                  width: 26,
+                  height: 26,
+                  borderRadius: 13,
                   backgroundColor: swatch.chip,
-                  borderWidth: 1,
-                  borderColor: colors.charcoal,
+                  borderWidth: 2,
+                  borderColor: 'rgba(255,255,255,0.2)',
                 }}
               />
             </PressScale>
@@ -158,36 +166,5 @@ export function VerseActionBar({
         </Animated.View>
       ) : null}
     </Animated.View>
-  );
-}
-
-function ActionChip({
-  label,
-  onPress,
-  active,
-  testID,
-}: {
-  label: string;
-  onPress: () => void;
-  active?: boolean;
-  testID?: string;
-}) {
-  const { colors } = useTheme();
-  return (
-    <PressScale onPress={onPress} accessibilityRole="button" testID={testID}>
-      <View
-        style={{
-          paddingVertical: 8,
-          paddingHorizontal: 14,
-          borderRadius: 999,
-          borderWidth: 1,
-          borderColor: active ? colors.amber : colors.line,
-          backgroundColor: active ? colors.creamDeep : 'transparent',
-        }}>
-        <AppText variant="ui" tone={active ? 'amber' : 'ink'}>
-          {label}
-        </AppText>
-      </View>
-    </PressScale>
   );
 }

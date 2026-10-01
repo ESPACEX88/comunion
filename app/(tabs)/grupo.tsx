@@ -4,6 +4,7 @@ import { HubEntry } from '@/components/group/HubEntry';
 import { MemberRow } from '@/components/group/MemberRow';
 import { StreakMark } from '@/components/streak/StreakMark';
 import { AppText } from '@/components/ui/AppText';
+import { AuroraOrb } from '@/components/ui/AuroraOrb';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
@@ -14,10 +15,10 @@ import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { partnerFirstName } from '@/features/duo/labels';
 import { sharedVerseOfDayRef } from '@/lib/bible/verseOfDay';
 import { planCaption } from '@/features/plans/content';
-import { space } from '@/theme';
+import { space, useTheme } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 export default function GrupoScreen() {
@@ -43,7 +44,12 @@ export default function GrupoScreen() {
     leaveDuo,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
+  const { setPreference } = useTheme();
+  const params = useLocalSearchParams<{ shot?: string }>();
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (params.shot === 'aurora') setPreference('dark');
+  }, [params.shot, setPreference]);
   const self = members.find((member) => member.isSelf) ?? members[0];
   const friendName = partnerFirstName(specialFriend);
   const sharedRef = sharedVerseOfDayRef(today);
@@ -60,27 +66,33 @@ export default function GrupoScreen() {
     return (
       <Screen refreshing={refreshing} onRefresh={onRefresh}>
         <Enter>
-          <AppText variant="label" tone="olive">
-            Nosotros
-          </AppText>
-          <AppText variant="title" style={{ marginTop: 8 }}>
-            Todavía no hay dúo
+          <AppText variant="label" tone="amber">
+            Dúo
           </AppText>
         </Enter>
-        <Ornament />
-        <SettingsCard style={{ marginTop: space.lg }}>
-          <AppText variant="body" tone="soft">
+        <View style={{ alignItems: 'center', paddingTop: space.xl }}>
+          <AuroraOrb />
+          <AppText variant="title" style={{ textAlign: 'center' }}>
+            Todavía no hay dúo
+          </AppText>
+          <AppText variant="ui" tone="soft" style={{ textAlign: 'center', marginTop: 8, maxWidth: 280 }}>
             Hoy ya es tu espacio. Cuando quieras leer con alguien, creá el dúo o uníte con un código.
           </AppText>
-          <View style={{ height: space.lg }} />
-          <Button label="Crear o unirme a un dúo" onPress={() => router.push('/onboarding/grupo')} />
-          <Button
-            label="Amigos"
-            variant="ghost"
-            style={{ marginTop: 10 }}
-            onPress={() => router.push('/amigos')}
-          />
-        </SettingsCard>
+        </View>
+        <View style={{ height: space.lg }} />
+        <Button label="Crear o unirme a un dúo" variant="solid" onPress={() => router.push('/onboarding/grupo')} />
+        <Button
+          label="Tengo un código →"
+          variant="inline"
+          style={{ marginTop: 14 }}
+          onPress={() => router.push('/onboarding/grupo')}
+        />
+        <Button
+          label="Amigos"
+          variant="ghost"
+          style={{ marginTop: 10 }}
+          onPress={() => router.push('/amigos')}
+        />
       </Screen>
     );
   }
@@ -89,7 +101,7 @@ export default function GrupoScreen() {
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <Enter>
         <AppText variant="label" tone="olive">
-          Nosotros
+          Dúo
         </AppText>
         <AppText variant="title" style={{ marginTop: 8 }}>
           Vos y {friendName}

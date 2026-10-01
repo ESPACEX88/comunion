@@ -1,7 +1,7 @@
 import { PressScale } from '@/components/motion/PressScale';
 import { TabMark } from '@/components/nav/TabMark';
 import { AppText } from '@/components/ui/AppText';
-import { fonts, useTheme } from '@/theme';
+import { fonts, radius, useTheme } from '@/theme';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -45,14 +45,16 @@ export function ComunionTabBar({ state, descriptors, navigation }: Props) {
   }));
 
   return (
-    <View style={{ backgroundColor: colors.cream, paddingTop: 6 }}>
+    <View style={{ backgroundColor: 'transparent', paddingTop: 6 }}>
       <View
         onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width - 12)}
         style={{
           marginHorizontal: 16,
           marginBottom: Math.max(insets.bottom, 10),
           backgroundColor: colors.tabBar,
-          borderRadius: 28,
+          borderRadius: radius.pill,
+          borderWidth: 1,
+          borderColor: colors.glassBorder,
           flexDirection: 'row',
           alignItems: 'center',
           padding: 6,
@@ -67,8 +69,12 @@ export function ComunionTabBar({ state, descriptors, navigation }: Props) {
                 top: 6,
                 bottom: 6,
                 left: 6,
-                borderRadius: 22,
-                backgroundColor: 'rgba(232, 196, 138, 0.18)',
+                borderRadius: radius.pill,
+                backgroundColor: colors.tabOnBg,
+                shadowColor: '#fff',
+                shadowOpacity: 0.25,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
               },
               pillStyle,
             ]}
@@ -107,22 +113,16 @@ export function ComunionTabBar({ state, descriptors, navigation }: Props) {
               accessibilityState={{ selected: focused }}
               accessibilityLabel={label}
               style={{ flex: 1, zIndex: 1 }}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 3,
-                  transform: [{ translateY: focused ? -2 : 0 }],
-                }}>
-                <TabMark kind={kind} focused={focused} />
+              <View style={{ alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <TabMark kind={kind} focused={focused} onLight={focused} />
                 <AppText
                   variant="caption"
                   style={{
                     fontFamily: fonts.ui,
                     fontSize: 10,
-                    letterSpacing: 1,
-                    textTransform: 'uppercase',
-                    color: focused ? colors.tabActive : colors.tabInactive,
+                    letterSpacing: 0.4,
+                    textTransform: 'none',
+                    color: focused ? colors.tabOnFg : colors.tabInactive,
                   }}>
                   {label}
                 </AppText>

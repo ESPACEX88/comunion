@@ -4,7 +4,6 @@ import { VerseList, VerseActionBar } from '@/components/bible/VerseList';
 import { BackLink } from '@/components/ui/BackLink';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useBible } from '@/features/bible/BibleProvider';
@@ -116,19 +115,27 @@ export default function BibliaLeerScreen() {
           />
         ) : null
       }>
-      <BackLink />
-      <AppText variant="label" tone="olive" style={{ marginTop: space.lg }}>
-        {bible?.abbreviation || 'Biblia'}
-      </AppText>
-      <AppText variant="display" style={{ marginTop: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <BackLink />
+        {bible?.abbreviation ? (
+          <AppText
+            variant="ui"
+            style={{
+              fontSize: 12,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              overflow: 'hidden',
+            }}>
+            {bible.abbreviation}
+          </AppText>
+        ) : null}
+      </View>
+      <AppText variant="display" style={{ marginTop: space.md }}>
         {heading}
       </AppText>
-      {bible ? (
-        <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-          {bible.name}
-        </AppText>
-      ) : null}
-      <Ornament />
+      <AppText variant="ui" tone="soft" style={{ marginTop: 4, marginBottom: space.md }}>
+        Seleccioná varios · barra fija abajo
+      </AppText>
 
       {params.shot === 'select' && passage ? (
         <View>

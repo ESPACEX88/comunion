@@ -1,6 +1,7 @@
 import { AppText } from '@/components/ui/AppText';
 import type { Member } from '@/lib/types';
-import { memberHues, radius, useTheme } from '@/theme';
+import { memberHues, useTheme } from '@/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { View } from 'react-native';
 
 function initials(name: string): string {
@@ -63,19 +64,39 @@ export function MemberRow({ member, completed }: Props) {
 
 export function Avatar({ name, hue, size = 64 }: { name: string; hue: Member['hue']; size?: number }) {
   const { colors } = useTheme();
+  const letter = (
+    <AppText variant={size > 48 ? 'title' : 'ui'} style={{ color: '#FFFCF6' }}>
+      {initials(name) || '·'}
+    </AppText>
+  );
+  if (size > 48) {
+    return (
+      <LinearGradient
+        colors={['#F97316', '#A855F7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 22,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {letter}
+      </LinearGradient>
+    );
+  }
   return (
     <View
       style={{
         width: size,
         height: size,
-        borderRadius: size > 48 ? radius.lg : size / 2,
+        borderRadius: size / 2,
         backgroundColor: memberHues[hue],
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-      <AppText variant={size > 48 ? 'title' : 'ui'} style={{ color: colors.white }}>
-        {initials(name)}
-      </AppText>
+      {letter}
     </View>
   );
 }

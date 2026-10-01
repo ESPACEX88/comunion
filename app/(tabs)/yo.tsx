@@ -2,10 +2,11 @@ import { Avatar } from '@/components/group/MemberRow';
 import { HubEntry } from '@/components/group/HubEntry';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
-import { Chip } from '@/components/ui/Chip';
+import { Chip, SegmentTrack } from '@/components/ui/Chip';
 import { Field } from '@/components/ui/Field';
 import { Screen } from '@/components/ui/Screen';
 import { SettingsCard } from '@/components/ui/SettingsCard';
+import { Toggle } from '@/components/ui/Toggle';
 import { confirmLeaveDuo } from '@/features/duo/leaveConfirm';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
@@ -41,7 +42,7 @@ export default function YoScreen() {
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
   const { signOut, user } = useAuth();
-  const { prefs, cancelAll } = useReminders();
+  const { prefs, cancelAll, updatePrefs } = useReminders();
   const { colors, preference, setPreference } = useTheme();
   const params = useLocalSearchParams<{ shot?: string }>();
   const self = members.find((m) => m.isSelf) ?? members[0];
@@ -58,24 +59,14 @@ export default function YoScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <AppText variant="label" tone="olive">
-        Tu espacio con Dios
-      </AppText>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.lg }}>
+      <View style={{ marginTop: space.lg }}>
         <Avatar name={state.userName} hue={self.hue} />
-        <View style={{ flex: 1 }}>
-          <AppText variant="title">{state.userName || 'Vos'}</AppText>
-          <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-            {showLeave
-              ? `${state.group.name}${live ? ' · en la nube' : ''}`
-              : 'En solitario, por ahora'}
-          </AppText>
-          {user?.email ? (
-            <AppText variant="caption" tone="soft" style={{ marginTop: 4 }}>
-              {user.email}
-            </AppText>
-          ) : null}
-        </View>
+        <AppText variant="title" style={{ marginTop: 12 }}>
+          {state.userName || 'Vos'}
+        </AppText>
+        <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
+          {user?.email || (showLeave ? `${state.group.name}${live ? ' · en la nube' : ''}` : 'En solitario, por ahora')}
+        </AppText>
       </View>
 
       <SettingsCard title="Cómo te llamás" style={{ marginTop: space.xl }}>
@@ -152,24 +143,64 @@ export default function YoScreen() {
       </SettingsCard>
 
       <SettingsCard title="Apariencia" style={{ marginTop: space.xl }}>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {THEME_OPTIONS.map((option) => (
-            <View key={option.id} style={{ flex: 1 }}>
+        <View style={{ paddingVertical: 8 }}>
+          <SegmentTrack>
+            {THEME_OPTIONS.map((option) => (
               <Chip
-                label={option.label}
+                key={option.id}
+                label={option.id === 'system' ? 'Auto' : option.label}
                 active={preference === option.id}
                 onPress={() => setPreference(option.id)}
               />
-            </View>
-          ))}
+            ))}
+          </SegmentTrack>
         </View>
-        <AppText variant="caption" tone="soft" style={{ marginTop: 10 }}>
-          Claro de papel. Oscuro de carbón. Sistema sigue al teléfono.
-        </AppText>
       </SettingsCard>
 
-      <SettingsCard title="Tu racha personal" style={{ marginTop: space.xl }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <SettingsCard title="Avisos" style={{ marginTop: space.lg }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.glassBorder,
+          }}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <AppText variant="ui">Aviso diario</AppText>
+            <AppText variant="caption" tone="soft" style={{ marginTop: 2, letterSpacing: 0 }}>
+              {prefs.soloEnabled
+                ? `${formatClock(prefs.soloHour, prefs.soloMinute)} · Guatemala`
+                : 'Apagado'}
+            </AppText>
+          </View>
+          <Toggle
+            value={prefs.soloEnabled}
+            onValueChange={(value) => void updatePrefs({ soloEnabled: value })}
+          />
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: 12,
+          }}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <AppText variant="ui">Recordatorios</AppText>
+            <AppText variant="caption" tone="soft" style={{ marginTop: 2, letterSpacing: 0 }}>
+              Horarios y el aviso de a dos
+            </AppText>
+          </View>
+          <AppText variant="ui" tone="amber" onPress={() => router.push('/recordatorios')}>
+            →
+          </AppText>
+        </View>
+      </SettingsCard>
+
+      <SettingsCard title="Tu racha personal" style={{ marginTop: space.lg }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 8 }}>
           {history.map((day) => {
             const done = state.personalCompletedDates.includes(day);
             const isToday = day === today;
@@ -198,7 +229,7 @@ export default function YoScreen() {
         {showLeave ? (
           <Button
             label="Salir del dúo"
-            variant="ghost"
+            variant="danger"
             testID="leave-duo"
             onPress={() => confirmLeaveDuo(runLeave)}
           />

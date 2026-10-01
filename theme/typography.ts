@@ -11,10 +11,10 @@ export const fonts = {
 } as const;
 
 export const typeScale = {
-  display: { fontSize: 40, lineHeight: 46, letterSpacing: -0.6 },
-  numeral: { fontSize: 56, lineHeight: 60, letterSpacing: -1.2 },
-  title: { fontSize: 28, lineHeight: 34, letterSpacing: -0.3 },
-  subtitle: { fontSize: 20, lineHeight: 26, letterSpacing: -0.2 },
+  display: { fontSize: 40, lineHeight: 42, letterSpacing: -1.4 },
+  numeral: { fontSize: 26, lineHeight: 30, letterSpacing: -0.8 },
+  title: { fontSize: 32, lineHeight: 36, letterSpacing: -0.9 },
+  subtitle: { fontSize: 23, lineHeight: 30, letterSpacing: -0.4 },
   body: { fontSize: 17, lineHeight: 28 },
   verse: { fontSize: 19, lineHeight: 32, letterSpacing: 0.1 },
   ui: { fontSize: 15, lineHeight: 22, letterSpacing: 0.2 },

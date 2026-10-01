@@ -19,13 +19,13 @@ export function HubEntry({ kicker, title, hint, onPress, last }: Props) {
         style={{
           paddingVertical: space.md,
           borderBottomWidth: last ? 0 : 1,
-          borderBottomColor: colors.line,
+          borderBottomColor: colors.glassBorder,
         }}>
         <AppText variant="label" tone="amber">
           {kicker}
         </AppText>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
-          <AppText variant="subtitle">{title}</AppText>
+        <AppText variant="ui">{title}</AppText>
           <AppText variant="ui" tone="amber">
             →
           </AppText>

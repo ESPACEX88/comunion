@@ -115,6 +115,14 @@ export function greeting(now = new Date()): string {
   return 'Buenas noches';
 }
 
+export function heroLine(name: string, now = new Date()): string {
+  const first = (name.split(' ')[0] || 'Vos').trim();
+  const h = now.getHours();
+  if (h < 12) return `${first},\nhoy hay luz.`;
+  if (h < 19) return `${first},\nel día sigue.`;
+  return `${first},\nla noche también.`;
+}
+
 export function formatTime(iso: string): string {
   return new Intl.DateTimeFormat('es-GT', {
     hour: 'numeric',
