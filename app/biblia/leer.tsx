@@ -12,14 +12,42 @@ import { useBiblePassage } from '@/features/bible/useBiblePassage';
 import { useVerseActions } from '@/features/bible/useVerseActions';
 import type { BiblePassage } from '@/lib/bible/types';
 import { friendlyBibleLoadError } from '@/lib/bible/errors';
-import { space } from '@/theme';
+import { space, useTheme } from '@/theme';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
+const GENESIS_SHOT: BiblePassage = {
+  id: 'shot-genesis-1',
+  bibleId: 'shot',
+  reference: 'Génesis 1',
+  copyright: 'Texto de demostración.',
+  verses: [
+    { n: 1, text: 'Al principio Dios hizo el cielo y la tierra.' },
+    {
+      n: 2,
+      text: 'Y la tierra estaba desordenada y sin forma; y estaba oscuro sobre la faz del abismo: y el Espíritu de Dios se movía sobre la faz de las aguas.',
+    },
+    { n: 3, text: 'Y dijo Dios: Hágase la luz, y fué la luz.' },
+    {
+      n: 4,
+      text: 'Y mirando Dios a la luz, vio que era buena; y Dios hizo una división entre la luz y la oscuridad,',
+    },
+    {
+      n: 5,
+      text: 'Nombrando la luz, el día y la oscuridad, la noche. Y hubo tarde y hubo mañana, el primer día.',
+    },
+    {
+      n: 6,
+      text: 'Y dijo Dios: Haya un arco visible del cielo que se extiende sobre las aguas, separando las aguas de las aguas.',
+    },
+  ],
+};
+
 export default function BibliaLeerScreen() {
-  const params = useLocalSearchParams<{ chapter?: string; ref?: string; title?: string }>();
+  const params = useLocalSearchParams<{ chapter?: string; ref?: string; title?: string; shot?: string }>();
   const { selfId } = useAppState();
+  const { setPreference } = useTheme();
   const { missingKey, ready, bible, loadChapter } = useBible();
   const fromRef = useBiblePassage(params.ref);
   const [fromChapter, setFromChapter] = useState<BiblePassage | null>(null);
@@ -52,9 +80,10 @@ export default function BibliaLeerScreen() {
     };
   }, [params.chapter, params.ref, missingKey, ready, loadChapter, chapterTick]);
 
-  const passage = params.ref ? fromRef.passage : fromChapter;
-  const loading = params.ref ? fromRef.loading : chapterLoading;
-  const error = params.ref ? fromRef.error : chapterError;
+  const passage =
+    params.shot === 'select' ? GENESIS_SHOT : params.ref ? fromRef.passage : fromChapter;
+  const loading = params.shot === 'select' ? false : params.ref ? fromRef.loading : chapterLoading;
+  const error = params.shot === 'select' ? null : params.ref ? fromRef.error : chapterError;
   const heading = passage?.reference || params.ref || params.title || 'Pasaje';
   const passageKey = passage?.id || params.chapter || params.ref || heading;
   const verseActions = useVerseActions({
@@ -64,12 +93,20 @@ export default function BibliaLeerScreen() {
     reference: heading,
   });
 
+  useEffect(() => {
+    if (params.shot !== 'select') return;
+    setPreference('dark');
+    verseActions.selectNs(GENESIS_SHOT.verses.filter((verse) => verse.n === 2 || verse.n === 4));
+    verseActions.openPalette();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- shot snapshot
+  }, [params.shot]);
+
   return (
     <Screen
       footer={
-        verseActions.selectedN != null ? (
+        verseActions.selectedCount > 0 ? (
           <VerseActionBar
-            selectedN={verseActions.selectedN}
+            selectedCount={verseActions.selectedCount}
             paletteOpen={verseActions.paletteOpen}
             copied={verseActions.copied}
             onCopy={() => void verseActions.onCopy()}
@@ -93,7 +130,16 @@ export default function BibliaLeerScreen() {
       ) : null}
       <Ornament />
 
-      {missingKey ? (
+      {params.shot === 'select' && passage ? (
+        <View>
+          <VerseList
+            verses={passage.verses}
+            selectedNs={verseActions.selectedNs}
+            colorsByVerse={{ ...verseActions.colorsByVerse, '2': 'gold', '4': 'gold' }}
+            onSelect={verseActions.onSelect}
+          />
+        </View>
+      ) : missingKey ? (
         <MissingBibleKey />
       ) : loading ? (
         <BibleWarm title="Trayendo el texto…" body="La primera vez viaja. Después queda en este teléfono." />
@@ -112,7 +158,7 @@ export default function BibliaLeerScreen() {
         <View>
           <VerseList
             verses={passage.verses}
-            selectedN={verseActions.selectedN}
+            selectedNs={verseActions.selectedNs}
             colorsByVerse={verseActions.colorsByVerse}
             onSelect={verseActions.onSelect}
           />

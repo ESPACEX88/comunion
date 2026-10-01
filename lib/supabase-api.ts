@@ -110,6 +110,19 @@ export async function joinDuo(code: string) {
   return data;
 }
 
+/** Solo membresía. No toca Auth ni profiles. */
+export async function leaveDuo() {
+  const supabase = getSupabase();
+  const { error } = await supabase.rpc('leave_duo');
+  if (error) {
+    const userId = await currentUserId();
+    const fallback = await supabase.from('duo_members').delete().eq('user_id', userId);
+    if (fallback.error) {
+      throw new Error(explain(error, 'No se pudo salir del dúo.'));
+    }
+  }
+}
+
 export async function ensurePsalmsPlan(duoId: string): Promise<string> {
   const supabase = getSupabase();
   const { data: existing, error: existingError } = await supabase

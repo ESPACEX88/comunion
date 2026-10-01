@@ -18,7 +18,7 @@ type Props = {
   style?: StyleProp<ViewStyle>;
   refreshing?: boolean;
   onRefresh?: () => void;
-  /** Barra fija al pie (queda fuera del ScrollView: teclado y versículo). */
+  /** Barra fija al pie del viewport (absolute). Nunca viaja con el ScrollView. */
   footer?: ReactNode;
 };
 
@@ -36,11 +36,12 @@ export function Screen({
   const padding = {
     paddingHorizontal: padded ? space.lg : 0,
     paddingTop: space.lg,
-    paddingBottom: footer ? space.lg : space.xxl,
+    paddingBottom: footer ? 148 : space.xxl,
   };
 
   const body = scroll ? (
     <ScrollView
+      style={{ flex: 1 }}
       contentContainerStyle={[padding, { flexGrow: 1 }]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -72,9 +73,14 @@ export function Screen({
         {body}
         {footer ? (
           <View
+            pointerEvents="box-none"
             style={{
-              paddingBottom: Math.max(insets.bottom, 10),
-              backgroundColor: colors.cream,
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 40,
+              paddingBottom: Math.max(insets.bottom, 12),
             }}>
             {footer}
           </View>

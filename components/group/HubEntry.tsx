@@ -8,16 +8,17 @@ type Props = {
   title: string;
   hint: string;
   onPress: () => void;
+  last?: boolean;
 };
 
-export function HubEntry({ kicker, title, hint, onPress }: Props) {
+export function HubEntry({ kicker, title, hint, onPress, last }: Props) {
   const { colors } = useTheme();
   return (
     <PressScale onPress={onPress} accessibilityRole="button">
       <View
         style={{
-          paddingVertical: space.lg,
-          borderBottomWidth: 1,
+          paddingVertical: space.md,
+          borderBottomWidth: last ? 0 : 1,
           borderBottomColor: colors.line,
         }}>
         <AppText variant="label" tone="amber">

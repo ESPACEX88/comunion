@@ -38,6 +38,7 @@ import {
   insertJournalEntry,
   insertPrayer,
   joinDuo,
+  leaveDuo as leaveDuoRemote,
   loadDuoBundle,
   loadJournalEntries,
   loadOwnCheckIns,
@@ -168,6 +169,7 @@ type AppContextValue = {
   simulateMissedDay: () => void;
   completeOnboarding: () => Promise<void>;
   enterSolo: () => Promise<void>;
+  leaveDuo: () => Promise<void>;
   ensureSoloPlan: () => Promise<void>;
   openReading: () => void;
   openPersonalReading: () => void;
@@ -580,6 +582,33 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setState(next);
     await dataSource.save(next);
   }, [draft.name, refreshLiveNow, user]);
+
+  const leaveDuo = useCallback(async () => {
+    if (user) {
+      await leaveDuoRemote();
+      await ensurePersonalSalmosPlan().catch(() => undefined);
+      setLiveBundleCompletions(null);
+      setLivePlan(null);
+      setLiveMembersList(null);
+      setState((prev) => ({
+        ...prev,
+        duoEnabled: false,
+        remoteDuoId: null,
+        remotePlanId: null,
+        onboardingComplete: true,
+      }));
+      await refreshLiveNow();
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      duoEnabled: false,
+      remoteDuoId: null,
+      remotePlanId: null,
+      onboardingComplete: true,
+    }));
+  }, [refreshLiveNow, user]);
 
   const ensureSoloPlan = useCallback(async () => {
     if (user) {
@@ -1122,6 +1151,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     simulateMissedDay,
     completeOnboarding,
     enterSolo,
+    leaveDuo,
     ensureSoloPlan,
     openReading,
     openPersonalReading,

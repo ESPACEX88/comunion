@@ -16,7 +16,7 @@ export function Card({ children, accent = 'none', style }: Props) {
           backgroundColor: colors.paper,
           borderColor: colors.line,
           borderWidth: 1,
-          borderRadius: radius.md,
+          borderRadius: radius.xl,
           padding: space.lg,
           borderLeftWidth: accent === 'none' ? 1 : 3,
           borderLeftColor:
