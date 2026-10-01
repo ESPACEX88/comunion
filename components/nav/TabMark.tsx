@@ -3,9 +3,17 @@ import { View } from 'react-native';
 
 type Kind = 'hoy' | 'grupo' | 'planes' | 'yo';
 
-export function TabMark({ kind, focused }: { kind: Kind; focused: boolean }) {
+export function TabMark({
+  kind,
+  focused,
+  onLight,
+}: {
+  kind: Kind;
+  focused: boolean;
+  onLight?: boolean;
+}) {
   const { colors } = useTheme();
-  const color = focused ? colors.tabActive : colors.tabInactive;
+  const color = onLight && focused ? colors.tabOnFg : focused ? colors.tabActive : colors.tabInactive;
 
   if (kind === 'hoy') {
     return (

@@ -14,38 +14,37 @@ type Props = {
 export function DayActionRow({ title, hint, cta, done, onPress }: Props) {
   const { colors } = useTheme();
   return (
-    <PressScale
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${cta}`}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={`${title}. ${cta}`}>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: space.md,
-          backgroundColor: colors.paper,
-          borderColor: colors.line,
+          backgroundColor: colors.glass,
+          borderColor: colors.glassBorder,
           borderWidth: 1,
-          borderRadius: radius.lg,
-          paddingVertical: 18,
+          borderRadius: radius.xxl,
+          paddingVertical: 16,
           paddingHorizontal: 18,
         }}>
         <View style={{ flex: 1 }}>
-          <AppText variant="subtitle">{title}</AppText>
-          <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
+          <AppText variant="ui">{title}</AppText>
+          <AppText variant="caption" tone="soft" style={{ marginTop: 4, letterSpacing: 0 }}>
             {hint}
           </AppText>
         </View>
         <View
           style={{
-            backgroundColor: done ? colors.statusDoneBg : colors.amber,
-            paddingHorizontal: 16,
+            backgroundColor: done ? colors.statusDoneBg : colors.glassStrong,
+            borderWidth: 1,
+            borderColor: done ? colors.statusDoneBg : colors.glassBorder,
+            paddingHorizontal: 14,
             paddingVertical: 8,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             minWidth: 64,
             alignItems: 'center',
           }}>
-          <AppText variant="ui" style={{ color: done ? colors.statusDoneFg : colors.white }}>
+          <AppText variant="ui" style={{ color: done ? colors.statusDoneFg : colors.ink }}>
             {cta}
           </AppText>
         </View>

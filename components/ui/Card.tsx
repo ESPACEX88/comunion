@@ -13,10 +13,10 @@ export function Card({ children, accent = 'none', style }: Props) {
     <View
       style={[
         {
-          backgroundColor: colors.paper,
-          borderColor: colors.line,
+          backgroundColor: colors.glass,
+          borderColor: colors.glassBorder,
           borderWidth: 1,
-          borderRadius: radius.xl,
+          borderRadius: radius.xxl,
           padding: space.lg,
           borderLeftWidth: accent === 'none' ? 1 : 3,
           borderLeftColor:

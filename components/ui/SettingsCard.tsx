@@ -1,7 +1,8 @@
-import { radius, space, useTheme } from '@/theme';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { space } from '@/theme';
 import type { ReactNode } from 'react';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 type Props = {
   title?: string;
@@ -10,7 +11,6 @@ type Props = {
 };
 
 export function SettingsCard({ title, children, style }: Props) {
-  const { colors } = useTheme();
   return (
     <View style={style}>
       {title ? (
@@ -18,18 +18,9 @@ export function SettingsCard({ title, children, style }: Props) {
           {title}
         </AppText>
       ) : null}
-      <View
-        style={{
-          backgroundColor: colors.paper,
-          borderColor: colors.line,
-          borderWidth: 1,
-          borderRadius: radius.xl,
-          paddingHorizontal: space.lg,
-          paddingVertical: space.md,
-          overflow: 'hidden',
-        }}>
+      <GlassCard padded={false} style={{ paddingHorizontal: space.md, paddingVertical: 8 }}>
         {children}
-      </View>
+      </GlassCard>
     </View>
   );
 }
