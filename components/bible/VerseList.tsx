@@ -8,32 +8,36 @@ import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 
 type ListProps = {
   verses: BibleVerse[];
-  selectedN: number | null;
+  selectedNs: number[];
   colorsByVerse: Record<string, HighlightColorId>;
   onSelect: (verse: BibleVerse) => void;
 };
 
-export function VerseList({ verses, selectedN, colorsByVerse, onSelect }: ListProps) {
+export function VerseList({ verses, selectedNs, colorsByVerse, onSelect }: ListProps) {
   const { colors } = useTheme();
+  const selectedSet = new Set(selectedNs);
 
   return (
     <View>
-      {selectedN == null ? (
+      {selectedNs.length === 0 ? (
         <AppText variant="caption" tone="soft" style={{ marginBottom: space.sm }}>
-          Tocá un versículo para copiarlo o resaltarlo.
+          Tocá uno o varios versículos. La barra queda abajo, fija.
         </AppText>
       ) : null}
       {verses.map((verse) => {
-        const selected = selectedN === verse.n;
+        const selected = selectedSet.has(verse.n);
         const paint = highlightPaint(colorsByVerse[String(verse.n)]);
         return (
           <Pressable
             key={`${verse.n}-${verse.text.slice(0, 12)}`}
+            testID={`verse-${verse.n}`}
+            nativeID={`verse-${verse.n}`}
             onPress={() => onSelect(verse)}
             onLongPress={() => onSelect(verse)}
             delayLongPress={280}
             accessibilityRole="button"
-            accessibilityLabel={`Versículo ${verse.n}`}>
+            accessibilityLabel={`Versículo ${verse.n}`}
+            accessibilityState={{ selected }}>
             <View
               style={{
                 flexDirection: 'row',
@@ -42,9 +46,9 @@ export function VerseList({ verses, selectedN, colorsByVerse, onSelect }: ListPr
                 paddingVertical: 10,
                 paddingHorizontal: 10,
                 marginHorizontal: -10,
-                borderRadius: radius.md,
+                borderRadius: radius.lg,
                 backgroundColor: paint ?? (selected ? colors.creamDeep : 'transparent'),
-                borderWidth: selected ? 1 : 0,
+                borderWidth: selected ? 1.5 : 0,
                 borderColor: colors.amberSoft,
               }}>
               <AppText variant="caption" tone="amber" style={{ width: 22, marginTop: 6 }}>
@@ -62,7 +66,7 @@ export function VerseList({ verses, selectedN, colorsByVerse, onSelect }: ListPr
 }
 
 type BarProps = {
-  selectedN: number;
+  selectedCount: number;
   paletteOpen: boolean;
   copied?: boolean;
   onCopy: () => void;
@@ -71,9 +75,9 @@ type BarProps = {
   onClose: () => void;
 };
 
-/** Barra fija al pie del viewport: no vive al final del capítulo. */
+/** Barra flotante fija al pie del viewport. Nunca al final del capítulo. */
 export function VerseActionBar({
-  selectedN,
+  selectedCount,
   paletteOpen,
   copied,
   onCopy,
@@ -82,32 +86,44 @@ export function VerseActionBar({
   onClose,
 }: BarProps) {
   const { colors } = useTheme();
+  const countLabel =
+    selectedCount === 1 ? '1 versículo' : `${selectedCount} versículos`;
 
   return (
     <Animated.View
       entering={FadeInUp.duration(280).springify().damping(20).stiffness(220)}
       exiting={FadeOut.duration(160)}
+      testID="verse-action-bar"
+      nativeID="verse-action-bar"
       style={{
-        marginHorizontal: space.lg,
-        marginTop: 8,
+        marginHorizontal: space.md,
         padding: space.md,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         backgroundColor: colors.paper,
         borderWidth: 1,
         borderColor: colors.line,
         gap: space.sm,
+        shadowColor: '#000',
+        shadowOpacity: 0.22,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 12,
       }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <AppText variant="label" tone="amber">
-          Versículo {selectedN}
+          {countLabel} seleccionados
         </AppText>
-        <PressScale onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar">
+        <PressScale
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Descartar"
+          testID="verse-discard">
           <AppText variant="ui" tone="soft">
-            ×
+            Descartar
           </AppText>
         </PressScale>
       </View>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         <ActionChip label={copied ? 'Copiado' : 'Copiar'} onPress={onCopy} testID="verse-copy" />
         <ActionChip
           label="Resaltar"

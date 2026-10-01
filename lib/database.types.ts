@@ -401,6 +401,7 @@ export type Database = {
       };
       cancel_friend_invite: { Args: Record<string, never>; Returns: undefined };
       unfriend: { Args: { p_friend_id: string }; Returns: undefined };
+      leave_duo: { Args: Record<string, never>; Returns: undefined };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

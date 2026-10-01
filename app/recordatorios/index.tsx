@@ -4,12 +4,14 @@ import { BackLink } from '@/components/ui/BackLink';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
+import { SettingsCard } from '@/components/ui/SettingsCard';
+import { Toggle } from '@/components/ui/Toggle';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useReminders } from '@/features/reminders/ReminderProvider';
 import { formatClock, remindersSupported } from '@/lib/reminders';
 import { space, useTheme } from '@/theme';
 import { useEffect, useRef } from 'react';
-import { Alert, Platform, Switch, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 
 export default function RecordatoriosScreen() {
   const { hasDuo } = useAppState();
@@ -105,12 +107,7 @@ export default function RecordatoriosScreen() {
             Por la mañana, si querés. Ahora a las {formatClock(prefs.soloHour, prefs.soloMinute)}.
           </AppText>
         </View>
-        <Switch
-          value={prefs.soloEnabled}
-          onValueChange={(value) => void toggleSolo(value)}
-          trackColor={{ false: colors.line, true: colors.oliveSoft }}
-          thumbColor={prefs.soloEnabled ? colors.olive : colors.creamDeep}
-        />
+        <Toggle value={prefs.soloEnabled} onValueChange={(value) => void toggleSolo(value)} />
       </View>
       <View style={{ marginTop: space.md }}>
         <TimeStepper
@@ -142,12 +139,7 @@ export default function RecordatoriosScreen() {
                 Al caer el día. Ahora a las {formatClock(prefs.duoHour, prefs.duoMinute)}.
               </AppText>
             </View>
-            <Switch
-              value={prefs.duoEnabled}
-              onValueChange={(value) => void toggleDuo(value)}
-              trackColor={{ false: colors.line, true: colors.oliveSoft }}
-              thumbColor={prefs.duoEnabled ? colors.olive : colors.creamDeep}
-            />
+            <Toggle value={prefs.duoEnabled} onValueChange={(value) => void toggleDuo(value)} />
           </View>
           <View style={{ marginTop: space.md }}>
             <TimeStepper

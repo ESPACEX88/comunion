@@ -108,9 +108,9 @@ export default function LecturaScreen() {
   return (
     <Screen
       footer={
-        verseActions.selectedN != null ? (
+        verseActions.selectedCount > 0 ? (
           <VerseActionBar
-            selectedN={verseActions.selectedN}
+            selectedCount={verseActions.selectedCount}
             paletteOpen={verseActions.paletteOpen}
             copied={verseActions.copied}
             onCopy={() => void verseActions.onCopy()}
@@ -164,7 +164,7 @@ export default function LecturaScreen() {
       )}
       <VerseList
         verses={verses}
-        selectedN={verseActions.selectedN}
+        selectedNs={verseActions.selectedNs}
         colorsByVerse={verseActions.colorsByVerse}
         onSelect={verseActions.onSelect}
       />

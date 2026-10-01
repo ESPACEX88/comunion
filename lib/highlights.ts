@@ -50,13 +50,38 @@ export function setVerseHighlight(
   verseN: number,
   colorId: HighlightColorId | null,
 ): HighlightMap {
+  return applyVerseHighlights(map, passageKey, [verseN], colorId, 'toggle');
+}
+
+/** Aplica (o quita) un color a varios versículos del mismo pasaje. */
+export function applyVerseHighlights(
+  map: HighlightMap,
+  passageKey: string,
+  verseNs: number[],
+  colorId: HighlightColorId | null,
+  mode: 'set' | 'toggle' = 'set',
+): HighlightMap {
   const nextPassage = { ...(map[passageKey] ?? {}) };
-  const key = String(verseN);
-  if (!colorId || nextPassage[key] === colorId) {
-    delete nextPassage[key];
-  } else {
-    nextPassage[key] = colorId;
+  const allHave =
+    colorId != null &&
+    verseNs.length > 0 &&
+    verseNs.every((n) => nextPassage[String(n)] === colorId);
+
+  for (const verseN of verseNs) {
+    const key = String(verseN);
+    if (!colorId) {
+      delete nextPassage[key];
+      continue;
+    }
+    if (mode === 'toggle' && nextPassage[key] === colorId) {
+      delete nextPassage[key];
+    } else if (mode === 'set' && allHave) {
+      delete nextPassage[key];
+    } else {
+      nextPassage[key] = colorId;
+    }
   }
+
   const next = { ...map };
   if (Object.keys(nextPassage).length === 0) {
     delete next[passageKey];

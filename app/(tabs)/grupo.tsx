@@ -7,6 +7,8 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
+import { SettingsCard } from '@/components/ui/SettingsCard';
+import { confirmLeaveDuo } from '@/features/duo/leaveConfirm';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { partnerFirstName } from '@/features/duo/labels';
@@ -38,6 +40,7 @@ export default function GrupoScreen() {
     groupProgress,
     todayStatus,
     openReading,
+    leaveDuo,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
   const [copied, setCopied] = useState(false);
@@ -65,23 +68,19 @@ export default function GrupoScreen() {
           </AppText>
         </Enter>
         <Ornament />
-        <AppText variant="body" tone="soft">
-          Hoy ya es tu espacio. Cuando quieras leer con alguien, creá el dúo o uníte con un código.
-        </AppText>
-        <View style={{ height: space.xl }} />
-        <Button label="Crear o unirme a un dúo" onPress={() => router.push('/onboarding/grupo')} />
-        <Button
-          label="Amigos"
-          variant="ghost"
-          style={{ marginTop: 10 }}
-          onPress={() => router.push('/amigos')}
-        />
-        <Button
-          label="Volver a Hoy"
-          variant="ghost"
-          style={{ marginTop: 10 }}
-          onPress={() => router.push('/(tabs)')}
-        />
+        <SettingsCard style={{ marginTop: space.lg }}>
+          <AppText variant="body" tone="soft">
+            Hoy ya es tu espacio. Cuando quieras leer con alguien, creá el dúo o uníte con un código.
+          </AppText>
+          <View style={{ height: space.lg }} />
+          <Button label="Crear o unirme a un dúo" onPress={() => router.push('/onboarding/grupo')} />
+          <Button
+            label="Amigos"
+            variant="ghost"
+            style={{ marginTop: 10 }}
+            onPress={() => router.push('/amigos')}
+          />
+        </SettingsCard>
       </Screen>
     );
   }
@@ -117,7 +116,7 @@ export default function GrupoScreen() {
             : `${groupToday.done} de ${groupToday.total} leyeron hoy.`
         }
       />
-      <View style={{ marginTop: space.xl }}>
+      <SettingsCard title="De a dos" style={{ marginTop: space.xl }}>
         <HubEntry
           kicker="Lectura de a dos"
           title={todayGroupReading.reference}
@@ -164,15 +163,12 @@ export default function GrupoScreen() {
           title="Tu red, más ancha"
           hint="El dúo es de a dos. Los amigos se suman con un código."
           onPress={() => router.push('/amigos')}
+          last
         />
-      </View>
-      <View style={{ marginTop: space.xl }}>
-        <AppText variant="label" tone="soft">
-          Invitación
-        </AppText>
+      </SettingsCard>
+      <SettingsCard title="Invitación" style={{ marginTop: space.xl }}>
         <View
           style={{
-            marginTop: space.md,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -194,7 +190,7 @@ export default function GrupoScreen() {
             style={{ paddingVertical: 8, paddingHorizontal: 14 }}
           />
         </View>
-      </View>
+      </SettingsCard>
       <View style={{ marginTop: space.lg }}>
         <MemberRow member={self} completed={groupToday.completedIds.includes(selfId)} />
         {specialFriend.id !== 'pending' ? (
@@ -213,6 +209,13 @@ export default function GrupoScreen() {
             ))
           : null}
       </View>
+      <Button
+        label="Salir del dúo"
+        variant="ghost"
+        testID="leave-duo"
+        style={{ marginTop: space.xl }}
+        onPress={() => confirmLeaveDuo(() => void leaveDuo())}
+      />
     </Screen>
   );
 }

@@ -1,7 +1,7 @@
 import {
+  applyVerseHighlights,
   loadHighlights,
   saveHighlights,
-  setVerseHighlight,
   type HighlightColorId,
   type HighlightMap,
 } from '@/lib/highlights';
@@ -17,7 +17,7 @@ export function useVerseActions(opts: {
 }) {
   const { userId, bibleId, passageKey, reference } = opts;
   const [map, setMap] = useState<HighlightMap>({});
-  const [selected, setSelected] = useState<BibleVerse | null>(null);
+  const [selected, setSelected] = useState<BibleVerse[]>([]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -32,7 +32,7 @@ export function useVerseActions(opts: {
   }, [userId, bibleId]);
 
   useEffect(() => {
-    setSelected(null);
+    setSelected([]);
     setPaletteOpen(false);
     setCopied(false);
   }, [passageKey]);
@@ -48,18 +48,25 @@ export function useVerseActions(opts: {
   const onSelect = useCallback((verse: BibleVerse) => {
     setCopied(false);
     setSelected((prev) => {
-      if (prev?.n === verse.n) {
-        setPaletteOpen(false);
-        return null;
+      const exists = prev.some((item) => item.n === verse.n);
+      if (exists) {
+        const next = prev.filter((item) => item.n !== verse.n);
+        if (next.length === 0) setPaletteOpen(false);
+        return next;
       }
-      return verse;
+      return [...prev, verse].sort((a, b) => a.n - b.n);
     });
   }, []);
 
+  const selectNs = useCallback((verses: BibleVerse[]) => {
+    setCopied(false);
+    setSelected([...verses].sort((a, b) => a.n - b.n));
+  }, []);
+
   const onCopy = useCallback(async () => {
-    if (!selected) return;
-    const line = `${selected.n} ${selected.text}\n— ${reference}`;
-    await Clipboard.setStringAsync(line);
+    if (selected.length === 0) return;
+    const body = selected.map((verse) => `${verse.n} ${verse.text}`).join('\n');
+    await Clipboard.setStringAsync(`${body}\n— ${reference}`);
     setCopied(true);
   }, [reference, selected]);
 
@@ -67,30 +74,46 @@ export function useVerseActions(opts: {
     setPaletteOpen((open) => !open);
   }, []);
 
+  const openPalette = useCallback(() => {
+    setPaletteOpen(true);
+  }, []);
+
   const onPickColor = useCallback(
     (colorId: HighlightColorId) => {
-      if (!selected) return;
-      persist(setVerseHighlight(map, passageKey, selected.n, colorId));
+      if (selected.length === 0) return;
+      persist(
+        applyVerseHighlights(
+          map,
+          passageKey,
+          selected.map((verse) => verse.n),
+          colorId,
+          'set',
+        ),
+      );
     },
     [map, passageKey, persist, selected],
   );
 
   const clear = useCallback(() => {
-    setSelected(null);
+    setSelected([]);
     setPaletteOpen(false);
     setCopied(false);
   }, []);
 
   const colorsByVerse = useMemo(() => map[passageKey] ?? {}, [map, passageKey]);
+  const selectedNs = useMemo(() => selected.map((verse) => verse.n), [selected]);
 
   return {
-    selectedN: selected?.n ?? null,
+    selectedNs,
+    selectedCount: selected.length,
     colorsByVerse,
     paletteOpen,
     copied,
     onSelect,
+    selectNs,
     onCopy,
     onTogglePalette,
+    openPalette,
     onPickColor,
     clear,
   };
