@@ -4,7 +4,7 @@
     "slug": "comunion",
     "version": "0.1.0",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
