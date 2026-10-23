@@ -1,6 +1,6 @@
 This is an Expo/React Native app (Comunión). Prioritize mobile-first patterns.
 
-Expo SDK is in package.json (currently 57). Prefer `npx expo install` for native modules.
+Expo SDK is in package.json (currently 58). Prefer `npx expo install` for native modules.
 
 ```bash
 npx expo start

@@ -6,7 +6,7 @@ MVP con Expo (iOS + Android). La UI está en español latinoamericano, con vos (
 
 ## Cómo correrla
 
-Hace falta Node 18 o más reciente.
+Hace falta Node 22.13 o más reciente (SDK 58).
 
 1. Copiá `.env.example` a `.env`.
 2. En el dashboard de Supabase → **Settings → API**, pegá:
@@ -72,7 +72,7 @@ eas update:configure
 
 - `extra.eas.projectId` (UUID real de expo.dev)
 - `updates.url` → `https://u.expo.dev/<ese-projectId>`
-- `runtimeVersion` (este repo ya trae `{ "policy": "appVersion" }`; hoy eso vale **`0.1.0`**, el `version` de `app.json`)
+- `runtimeVersion` (este repo usa `{ "policy": "sdkVersion" }` para que **Expo Go** cargue el update; en SDK 58 vale `exposdk:58.0.0`)
 
 Los channels `preview` y `production` ya están en `eas.json`. No hace falta un build nativo para abrir el update en Expo Go.
 
@@ -311,6 +311,6 @@ Tipografía: **Fraunces** (titulares y UI) y **Literata** (pasajes). Paleta: cre
 
 ## Notas
 
-- Expo SDK 57, React Native 0.86, TypeScript, Expo Router. `expo-updates` ~57 está instalado; el `projectId` de EAS lo escribe José con `eas init`.
+- Expo SDK 58, React Native 0.88, TypeScript, Expo Router. `expo-updates` ~58 está instalado; el `projectId` de EAS ya está en `app.json`.
 - El filesystem de un host efímero (p. ej. Render) no aplica a esta app móvil; aquí la persistencia es AsyncStorage en el dispositivo.
 - Los extractos de los planes son de demostración. El texto completo llega de API.Bible (edición española que autorice la key; se prefiere Reina Valera 1909 / dominio público).

@@ -2,6 +2,7 @@ import { PressScale } from '@/components/motion/PressScale';
 import { TabMark } from '@/components/nav/TabMark';
 import { AppText } from '@/components/ui/AppText';
 import { fonts, radius, useTheme } from '@/theme';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -9,27 +10,17 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const spring = { damping: 18, stiffness: 210, mass: 0.7 };
 
-type TabRoute = { key: string; name: string; params?: object };
-type Props = {
-  state: { index: number; routes: TabRoute[] };
-  descriptors: Record<string, { options: { tabBarLabel?: unknown; title?: string } }>;
-  navigation: {
-    emit: (event: {
-      type: 'tabPress';
-      target: string;
-      canPreventDefault: true;
-    }) => { defaultPrevented: boolean };
-    navigate: (name: string, params?: object) => void;
-  };
-};
-
-export function ComunionTabBar({ state, descriptors, navigation }: Props) {
+export function ComunionTabBar({
+  state,
+  descriptors,
+  emitter,
+  navigateToTab,
+  insets,
+}: BottomTabBarProps) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [trackWidth, setTrackWidth] = useState(0);
   const progress = useSharedValue(state.index);
   const count = state.routes.length;
@@ -100,13 +91,13 @@ export function ComunionTabBar({ state, descriptors, navigation }: Props) {
             <PressScale
               key={route.key}
               onPress={() => {
-                const event = navigation.emit({
+                const event = emitter.emit({
                   type: 'tabPress',
                   target: route.key,
                   canPreventDefault: true,
                 });
                 if (!focused && !event.defaultPrevented) {
-                  navigation.navigate(route.name, route.params);
+                  navigateToTab(route.key);
                 }
               }}
               accessibilityRole="button"
