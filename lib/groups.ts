@@ -4,6 +4,8 @@ import {
   rotatingChallenge,
   type GroupColorId,
 } from '@/features/groups/challenges';
+
+export type { GroupColorId };
 import { PSALMS_PLAN } from '@/features/plans/content';
 import { todayKey, weekStartMonday } from '@/lib/date';
 import { getSupabase } from '@/lib/supabase';
