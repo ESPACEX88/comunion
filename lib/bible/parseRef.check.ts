@@ -2,7 +2,7 @@ import { bookMatchesQuery } from './filterBooks';
 import { versesFromContent } from './parseContent';
 import { parseScriptureRef, passageIdFromRef } from './parseRef';
 import { VERSE_OF_DAY_REFS } from './verseCalendar';
-import { personalVerseOfDayRef, sharedVerseOfDayRef, verseOfDayRef } from './verseOfDay';
+import { groupVerseOfDayRef, personalVerseOfDayRef, sharedVerseOfDayRef, verseOfDayRef } from './verseOfDay';
 import { BIBLE_RETRY_COPY, friendlyBibleLoadError } from './errors';
 import { SOLO_PSALMS_PLAN, planDayForDate } from '@/features/plans/content';
 
@@ -63,6 +63,18 @@ assert(
 assert(
   sharedVerseOfDayRef('2026-09-22') === verseOfDayRef('2026-09-22'),
   'compartido sin seed',
+);
+assert(
+  groupVerseOfDayRef('2026-10-27', 'grupo-a') === groupVerseOfDayRef('2026-10-27', 'grupo-a'),
+  'versículo de grupo estable',
+);
+assert(
+  groupVerseOfDayRef('2026-10-27', 'grupo-a') !== groupVerseOfDayRef('2026-10-27', 'grupo-b'),
+  'dos grupos, mismo día',
+);
+assert(
+  groupVerseOfDayRef('2026-10-27', 'grupo-a') !== verseOfDayRef('2026-10-27'),
+  'el del grupo no es el personal compartido',
 );
 
 const startToday = planDayForDate(SOLO_PSALMS_PLAN, '2026-09-22', '2026-09-22');

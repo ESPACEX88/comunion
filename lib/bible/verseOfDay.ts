@@ -41,3 +41,8 @@ export function personalVerseOfDayRef(
 export function sharedVerseOfDayRef(dayKey: string): VerseOfDayRef {
   return verseOfDayRef(dayKey);
 }
+
+/** Mismo versículo para todas las personas del grupo, ese día. */
+export function groupVerseOfDayRef(dayKey: string, groupId: string): VerseOfDayRef {
+  return verseOfDayRef(dayKey, `group:${groupId}`);
+}

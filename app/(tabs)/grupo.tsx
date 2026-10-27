@@ -88,6 +88,12 @@ export default function GrupoScreen() {
           onPress={() => router.push('/onboarding/grupo')}
         />
         <Button
+          label="Grupo de iglesia"
+          variant="ghost"
+          style={{ marginTop: 10 }}
+          onPress={() => router.push('/(tabs)/grupos')}
+        />
+        <Button
           label="Amigos"
           variant="ghost"
           style={{ marginTop: 10 }}
@@ -175,6 +181,12 @@ export default function GrupoScreen() {
           title="Tu red, más ancha"
           hint="El dúo es de a dos. Los amigos se suman con un código."
           onPress={() => router.push('/amigos')}
+        />
+        <HubEntry
+          kicker="Grupo"
+          title="La iglesia, de a varios"
+          hint="Lectura, oración y un reto. El dúo se queda de a dos."
+          onPress={() => router.push('/(tabs)/grupos')}
           last
         />
       </SettingsCard>

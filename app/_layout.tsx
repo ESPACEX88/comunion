@@ -1,6 +1,7 @@
 import { AppStateProvider } from '@/features/app-state/AppStateProvider';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { BibleProvider } from '@/features/bible/BibleProvider';
+import { GroupsProvider } from '@/features/groups/GroupsProvider';
 import { ReminderProvider } from '@/features/reminders/ReminderProvider';
 import { ThemeProvider, useTheme } from '@/theme';
 import {
@@ -85,24 +86,27 @@ function ThemedRoot() {
         <AppStateProvider>
           <ReminderProvider>
             <BibleProvider>
-              <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: colors.cream },
-                  animation: 'fade',
-                }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="onboarding" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="lectura" />
-                <Stack.Screen name="nosotros" />
-                <Stack.Screen name="diario" />
-                <Stack.Screen name="check-in" />
-                <Stack.Screen name="recordatorios" />
-                <Stack.Screen name="biblia" />
-                <Stack.Screen name="amigos" />
-              </Stack>
+              <GroupsProvider>
+                <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.cream },
+                    animation: 'fade',
+                  }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="onboarding" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="lectura" />
+                  <Stack.Screen name="nosotros" />
+                  <Stack.Screen name="diario" />
+                  <Stack.Screen name="check-in" />
+                  <Stack.Screen name="recordatorios" />
+                  <Stack.Screen name="biblia" />
+                  <Stack.Screen name="amigos" />
+                  <Stack.Screen name="grupo" />
+                </Stack>
+              </GroupsProvider>
             </BibleProvider>
           </ReminderProvider>
         </AppStateProvider>

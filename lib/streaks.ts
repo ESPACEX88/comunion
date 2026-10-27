@@ -1,5 +1,5 @@
 import { CURRENT_USER_ID } from '@/features/plans/content';
-import { addDays, sameWeek, yesterday } from '@/lib/date';
+import { addDays, sameWeek, weekStartMonday, yesterday } from '@/lib/date';
 import type { DayProgress, DayStatus } from '@/lib/types';
 
 /**
@@ -100,6 +100,49 @@ export function groupStreakWithGrace(
       continue;
     }
     if (everyoneOrUserGrace(cursor)) {
+      cursor = yesterday(cursor);
+      continue;
+    }
+    break;
+  }
+  return count;
+}
+
+/** El día del grupo cuenta cuando la mitad (redondeada hacia arriba) ya leyó. */
+export function groupReadThreshold(memberCount: number): number {
+  if (memberCount <= 0) return 1;
+  return Math.max(1, Math.ceil(memberCount / 2));
+}
+
+export function groupThresholdMet(
+  memberIds: string[],
+  completions: Record<string, string[]>,
+  day: string,
+): boolean {
+  if (memberIds.length === 0) return false;
+  const done = memberIds.filter((id) => (completions[id] ?? []).includes(day)).length;
+  return done >= groupReadThreshold(memberIds.length);
+}
+
+export function collectiveStreak(
+  memberIds: string[],
+  completions: Record<string, string[]>,
+  today: string,
+): number {
+  const met = (day: string) => groupThresholdMet(memberIds, completions, day);
+  let cursor = met(today) ? today : yesterday(today);
+  let count = 0;
+  const graceWeeks = new Set<string>();
+  for (let i = 0; i < 400; i += 1) {
+    if (met(cursor)) {
+      count += 1;
+      cursor = yesterday(cursor);
+      continue;
+    }
+    const week = weekStartMonday(cursor);
+    const canGrace = !graceWeeks.has(week) && (count > 0 || met(yesterday(cursor)));
+    if (canGrace) {
+      graceWeeks.add(week);
       cursor = yesterday(cursor);
       continue;
     }

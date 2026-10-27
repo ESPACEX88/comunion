@@ -23,12 +23,20 @@ export function ComunionTabBar({
   const { colors } = useTheme();
   const [trackWidth, setTrackWidth] = useState(0);
   const progress = useSharedValue(state.index);
-  const count = state.routes.length;
+  const visibleRoutes = state.routes.filter((route) => {
+    const href = (descriptors[route.key]?.options as { href?: string | null } | undefined)?.href;
+    return href !== null;
+  });
+  const focusedIndex = Math.max(
+    0,
+    visibleRoutes.findIndex((route) => route.key === state.routes[state.index]?.key),
+  );
+  const count = visibleRoutes.length;
   const pillWidth = count > 0 && trackWidth > 0 ? trackWidth / count : 0;
 
   useEffect(() => {
-    progress.value = withSpring(state.index, spring);
-  }, [progress, state.index]);
+    progress.value = withSpring(focusedIndex, spring);
+  }, [progress, focusedIndex]);
 
   const pillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: progress.value * pillWidth }],
@@ -71,8 +79,8 @@ export function ComunionTabBar({
             ]}
           />
         ) : null}
-        {state.routes.map((route, index) => {
-          const focused = state.index === index;
+        {visibleRoutes.map((route) => {
+          const focused = route.key === state.routes[state.index]?.key;
           const { options } = descriptors[route.key];
           const label =
             typeof options.tabBarLabel === 'string'
@@ -83,9 +91,11 @@ export function ComunionTabBar({
               ? 'hoy'
               : route.name === 'grupo'
                 ? 'grupo'
-                : route.name === 'planes'
-                  ? 'planes'
-                  : 'yo';
+                : route.name === 'grupos'
+                  ? 'grupos'
+                  : route.name === 'planes'
+                    ? 'planes'
+                    : 'yo';
 
           return (
             <PressScale

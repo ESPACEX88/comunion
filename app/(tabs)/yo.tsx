@@ -11,6 +11,7 @@ import { confirmLeaveDuo } from '@/features/duo/leaveConfirm';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useGroups } from '@/features/groups/GroupsProvider';
 import { useReminders } from '@/features/reminders/ReminderProvider';
 import { formatClock } from '@/lib/reminders';
 import { lastNDays, parseDayKey } from '@/lib/date';
@@ -42,6 +43,7 @@ export default function YoScreen() {
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
   const { signOut, user } = useAuth();
+  const { groups } = useGroups();
   const { prefs, cancelAll, updatePrefs } = useReminders();
   const { colors, preference, setPreference } = useTheme();
   const params = useLocalSearchParams<{ shot?: string }>();
@@ -129,7 +131,17 @@ export default function YoScreen() {
           title="Tu red"
           hint="Más ancha que el dúo. Un código, un sí."
           onPress={() => router.push('/amigos')}
-          last={!hasDuo ? false : true}
+        />
+        <HubEntry
+          kicker="Grupo"
+          title="La iglesia, de a varios"
+          hint={
+            groups.length === 0
+              ? 'Un código, un sí. El dúo no se toca.'
+              : `${groups.length} ${groups.length === 1 ? 'grupo' : 'grupos'}.`
+          }
+          onPress={() => router.push('/(tabs)/grupos')}
+          last={hasDuo}
         />
         {!hasDuo ? (
           <HubEntry
