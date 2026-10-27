@@ -29,10 +29,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="planes"
+        name="grupos"
         options={{
-          title: 'Planes',
-          tabBarIcon: ({ focused }) => <TabMark kind="planes" focused={focused} />,
+          title: 'Grupo',
+          tabBarIcon: ({ focused }) => <TabMark kind="grupos" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -40,6 +40,14 @@ export default function TabLayout() {
         options={{
           title: 'Yo',
           tabBarIcon: ({ focused }) => <TabMark kind="yo" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="planes"
+        options={{
+          title: 'Planes',
+          href: null,
+          tabBarIcon: ({ focused }) => <TabMark kind="planes" focused={focused} />,
         }}
       />
     </Tabs>

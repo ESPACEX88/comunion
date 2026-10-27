@@ -5,6 +5,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
+import { useGroups } from '@/features/groups/GroupsProvider';
 import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
 import { moodLabel } from '@/features/duo/moods';
 import { partnerFirstName } from '@/features/duo/labels';
@@ -36,6 +37,7 @@ export default function HoyScreen() {
     soloStreak,
   } = useAppState();
   const { refreshing, onRefresh } = useDuoSyncControls();
+  const { groups } = useGroups();
   const { colors, setPreference } = useTheme();
   const params = useLocalSearchParams<{ shot?: string }>();
   useEffect(() => {
@@ -153,6 +155,26 @@ export default function HoyScreen() {
               hint="Versículo de los dos, lectura y oración"
               cta="Ir"
               onPress={() => router.push('/(tabs)/grupo')}
+            />
+          </Enter>
+        ) : null}
+        {groups.length > 0 ? (
+          <Enter delay={hasDuo ? 340 : 300}>
+            <DayActionRow
+              title={groups.length === 1 ? groups[0].name : 'Tus grupos'}
+              hint={
+                groups.length === 1
+                  ? `${groups[0].memberCount} ${groups[0].memberCount === 1 ? 'persona' : 'personas'} · lectura y oración`
+                  : `${groups.length} grupos de iglesia`
+              }
+              cta="Ir"
+              onPress={() => {
+                if (groups.length === 1) {
+                  router.push({ pathname: '/grupo/[id]', params: { id: groups[0].id } });
+                  return;
+                }
+                router.push('/(tabs)/grupos');
+              }}
             />
           </Enter>
         ) : null}

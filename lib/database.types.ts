@@ -375,6 +375,180 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      groups: {
+        Row: {
+          id: string;
+          name: string;
+          emoji: string;
+          color: string;
+          invite_code: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          emoji?: string;
+          color?: string;
+          invite_code: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: { name?: string; emoji?: string; color?: string; invite_code?: string; updated_at?: string };
+        Relationships: [];
+      };
+      group_members: {
+        Row: { group_id: string; user_id: string; role: string; joined_at: string };
+        Insert: { group_id: string; user_id: string; role?: string; joined_at?: string };
+        Update: { role?: string };
+        Relationships: [];
+      };
+      group_plans: {
+        Row: {
+          id: string;
+          group_id: string;
+          title: string;
+          description: string | null;
+          days: number;
+          starts_on: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          title: string;
+          description?: string | null;
+          days: number;
+          starts_on: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: { is_active?: boolean; title?: string };
+        Relationships: [];
+      };
+      group_plan_days: {
+        Row: {
+          id: string;
+          plan_id: string;
+          day_number: number;
+          scripture_ref: string;
+          prompt: string | null;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          day_number: number;
+          scripture_ref: string;
+          prompt?: string | null;
+        };
+        Update: { scripture_ref?: string; prompt?: string | null };
+        Relationships: [];
+      };
+      group_plan_completions: {
+        Row: {
+          id: string;
+          plan_id: string;
+          user_id: string;
+          day_number: number;
+          completed_on: string;
+          used_grace: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          user_id: string;
+          day_number: number;
+          completed_on?: string;
+          used_grace?: boolean;
+          created_at?: string;
+        };
+        Update: { used_grace?: boolean };
+        Relationships: [];
+      };
+      group_prayers: {
+        Row: {
+          id: string;
+          group_id: string;
+          author_id: string;
+          body: string;
+          is_anonymous: boolean;
+          is_answered: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          author_id: string;
+          body: string;
+          is_anonymous?: boolean;
+          is_answered?: boolean;
+          created_at?: string;
+        };
+        Update: { is_answered?: boolean; body?: string };
+        Relationships: [];
+      };
+      group_prayer_marks: {
+        Row: { prayer_id: string; user_id: string; created_at: string };
+        Insert: { prayer_id: string; user_id: string; created_at?: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      group_verse_comments: {
+        Row: {
+          id: string;
+          group_id: string;
+          day_key: string;
+          author_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          day_key: string;
+          author_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: { body?: string };
+        Relationships: [];
+      };
+      group_challenges: {
+        Row: {
+          id: string;
+          group_id: string;
+          week_start: string;
+          challenge_key: string;
+          title: string;
+          body: string;
+          target: number;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          week_start: string;
+          challenge_key: string;
+          title: string;
+          body: string;
+          target?: number;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: { challenge_key?: string; title?: string; body?: string; target?: number };
+        Relationships: [];
+      };
+      group_challenge_checkins: {
+        Row: { challenge_id: string; user_id: string; progress: number; updated_at: string };
+        Insert: { challenge_id: string; user_id: string; progress?: number; updated_at?: string };
+        Update: { progress?: number; updated_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -402,6 +576,19 @@ export type Database = {
       cancel_friend_invite: { Args: Record<string, never>; Returns: undefined };
       unfriend: { Args: { p_friend_id: string }; Returns: undefined };
       leave_duo: { Args: Record<string, never>; Returns: undefined };
+      is_group_member: { Args: { p_group_id: string }; Returns: boolean };
+      is_group_owner: { Args: { p_group_id: string }; Returns: boolean };
+      create_group: {
+        Args: { p_name: string; p_emoji?: string; p_color?: string };
+        Returns: Database['public']['Tables']['groups']['Row'];
+      };
+      join_group: {
+        Args: { p_code: string };
+        Returns: Database['public']['Tables']['groups']['Row'];
+      };
+      leave_group: { Args: { p_group_id: string }; Returns: undefined };
+      remove_group_member: { Args: { p_group_id: string; p_user_id: string }; Returns: undefined };
+      rotate_group_code: { Args: { p_group_id: string }; Returns: string };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

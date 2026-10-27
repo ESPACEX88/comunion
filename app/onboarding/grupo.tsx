@@ -29,7 +29,7 @@ export default function OnboardingGroup() {
       <Ornament />
       <AppText variant="body" tone="soft">
         {session
-          ? 'Si hay alguien con quien leer, creá el dúo o uníte. Si no, seguí en solitario. Tu diario y tu plan quedan solo para vos.'
+          ? 'Si hay alguien con quien leer, creá el dúo o uníte. Si no, seguí en solitario. Tu diario y tu plan quedan solo para vos. El grupo de iglesia, si hay, está en la pestaña Grupo.'
           : 'Podés entrar sola en este teléfono, o armar un dúo mock para ver cómo se siente de a dos.'}
       </AppText>
       <View style={{ height: space.lg }} />

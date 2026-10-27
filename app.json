@@ -44,7 +44,9 @@
           "color": "#C47B2A",
           "defaultChannel": "reminders"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
