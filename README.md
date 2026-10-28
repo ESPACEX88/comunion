@@ -1,8 +1,8 @@
 # Comunión
 
-App cristiana para leer la Biblia **en dúo**: racha personal, racha compartida, check-in espiritual, oración mutua, versículos del corazón y una pregunta diaria de a dos. Un día cuenta **solo cuando se termina la lectura de ese día**, no con un visto suelto.
+App cristiana para leer la Biblia **en grupo** (jóvenes de iglesia, ~10 personas): lectura compartida, racha colectiva, oración, versículo del día y un reto semanal. Un día del grupo cuenta cuando **al menos la mitad** ya leyó.
 
-MVP con Expo (iOS + Android). La UI está en español latinoamericano, con vos (estilo es-GT). El tono es de pareja de lectura íntima. Con sesión de Supabase, el dúo se sincroniza de verdad. Sin cuenta, queda un mock local en el teléfono.
+MVP con Expo (iOS + Android). La UI está en español latinoamericano, con vos (estilo es-GT). Con sesión de Supabase, el grupo se sincroniza de verdad.
 
 ## Cómo correrla
 
@@ -99,7 +99,7 @@ eas update --channel preview --message "Comunión preview" --environment preview
 
 Cambio el mensaje si hace falta: `eas update --channel preview --message "arreglo recordatorios" --environment preview`.
 
-### Cómo abrir (José y Jazmín)
+### Cómo abrir (José)
 
 1. En [expo.dev](https://expo.dev) → proyecto → **Updates** → el update de `preview` → **Open in Expo Go** (o el QR).
 2. O armá el QR (el `projectId` sale de `app.json` → `extra.eas.projectId` después del `eas init`):
@@ -110,7 +110,7 @@ https://qr.expo.dev/eas-update?slug=exp&projectId=PEGA-EL-PROJECT-ID&runtimeVers
 
 `slug=exp` apunta a Expo Go (no a un development build). Si cambiás `version` en `app.json`, cambiá `runtimeVersion` en esa URL. Para el link en texto, agregá `&format=url`.
 
-**Jazmín:** mismo QR o link. Invitala a la org/proyecto en expo.dev, o compartile el update. En **iPhone** Expo Go casi siempre pide que esté **logueada** (misma cuenta o cuenta con acceso al proyecto). Android suele ser más permisivo.
+En **iPhone** Expo Go casi siempre pide que esté **logueada** (misma cuenta o cuenta con acceso al proyecto). Android suele ser más permisivo.
 
 ### Qué es / qué no es
 
@@ -118,7 +118,7 @@ https://qr.expo.dev/eas-update?slug=exp&projectId=PEGA-EL-PROJECT-ID&runtimeVers
 | --- | --- |
 | Expo Go + update hospedado, gratis | App con ícono propio en el home |
 | José publica con 1 comando después del setup | Dejar la PC con Metro |
-| Auth / dúo / recordatorios locales via el JS publicado | Push remoto / EAS Build nativo |
+| Auth / grupos / recordatorios locales via el JS publicado | Push remoto / EAS Build nativo |
 
 Build nativo (`eas build`) y App Store quedan para cuando haya cuenta de Apple Developer. Este PR no publica nada: hace falta el login de José.
 
@@ -150,9 +150,9 @@ Al primer uso la app lista `/bibles`, elige una española open/public domain (pr
 
 El texto **no** se pide con el `fetch` nativo de Expo (en iPhone/Expo Go puede fallar el TLS hacia `api.scripture.api.bible`). Va por la Edge Function `bible` de Supabase (`zpjrfxbrfdapoufdvrqr`) y, si hace falta, por XMLHttpRequest. Secret del servidor: **`API_BIBLE_KEY`** en Supabase → Project Settings → Edge Functions → Secrets (la misma key de scripture.api.bible). Si todavía no está, la función acepta `x-bible-key` desde `EXPO_PUBLIC_API_BIBLE_KEY` del update. Si el texto no llega: mensaje suave y **Reintentar**, nunca el stack/TLS.
 
-En **Hoy** hay **tu versículo** (calendario local + semilla de tu cuenta; el texto es de la edición activa). El dúo ve **versículo de los dos** en Nosotros (mismo dayKey Guatemala para las dos). Tocá el bloque para abrir el pasaje en el lector.
+En **Hoy** el versículo es el del grupo (calendario Guatemala + semilla del grupo). Tocá el bloque para abrir el pasaje en el lector.
 
-Entradas: **Hoy → Biblia** y **Yo → Leer la Biblia**. Tocá la referencia del plan para abrir el pasaje completo.
+Entradas: pestaña **Biblia**, y la lectura del grupo desde Hoy. Tocá la referencia para abrir el pasaje completo.
 
 Si cambiaste código: lanzá un **Run workflow nuevo** de `eas-update-preview` (no re-run del viejo) y abrí el update más reciente en Expo Go.
 
@@ -160,22 +160,20 @@ Si cambiaste código: lanzá un **Run workflow nuevo** de `eas-update-preview` (
 
 | Ruta | Qué es |
 | --- | --- |
-| `/onboarding` | Cuenta (registro / login, campos vacíos). Opcional: seguir sin cuenta |
-| `/onboarding/grupo` | Crear dúo (`create_duo`) o unirse con código (`join_duo`) |
-| `/onboarding/plan` | Confirmar «Salmos de a dos» |
-| `/(tabs)` **Hoy** | Tu versículo, acciones del día (lectura, check-in, diario, Biblia) |
+| `/onboarding` | Cuenta (registro / login). Opcional: seguir sin cuenta |
+| `/onboarding/grupo` | Crear grupo o unirse con código |
+| `/(tabs)` **Hoy** | Versículo del grupo, X de Y leyeron, racha colectiva, reto, oración |
+| `/(tabs)` **Biblia** | Lector: versión, buscador, libros → capítulos → texto |
+| `/(tabs)` **Grupo** | Bienvenida (crear / código) o casa del grupo: Lectura, Oración, Versículo, Reto, Miembros |
+| `/(tabs)` **Yo** | Perfil, diario, plan personal, recordatorios, historial |
+| `/grupo/unirse?code=` | Deep link para unirse |
 | `/check-in` | Check-in personal del día |
-| `/lectura` | Pasaje del día; al completar, modal de racha (cerrable) y check-in |
-| `/(tabs)` **Grupo** | **Nosotros**: versículo de los dos, lectura de a dos, oración, mural, amigos, código |
-| `/(tabs)` **Planes** | Plan activo: ciclos de 7 días (Salmos no se congela en el día 7) |
-| `/(tabs)` **Yo** | Perfil, amigos, recordatorios, historial, cerrar sesión |
-| `/amigos` | Red de amigos (aparte del dúo): invitar con código, aceptar, lista, quitar |
-| `/recordatorios` | Avisos locales: Tu momento (mañana) y Juntos (si hay dúo) |
-| `/biblia` | Lector: versión, buscador, libros → capítulos → texto (API.Bible) |
+| `/lectura` | Plan personal; al completar, modal de racha |
+| `/recordatorios` | Aviso local: Tu momento |
 | `/biblia/versiones` | Selector de edición española |
-| `/biblia/leer` | Capítulo o pasaje del plan (`?ref=Salmo 23`). Tocá un versículo: copiar o resaltar |
+| `/biblia/leer` | Capítulo o pasaje (`?ref=Salmo 23`) |
 
-Flujo con nube: instalar → `.env` → registro de José → crear dúo → compartir código → Ana se registra y se une → check-in / oración / versículo / día del plan se ven en las dos cuentas (RLS: cada una solo ve su dúo).
+Flujo con nube: instalar → `.env` → registro → crear grupo → compartir código → otra persona se registra y se une → lectura, oración, versículo y reto se ven en las dos cuentas.
 
 ## Fase 1 (dúo)
 

@@ -1,7 +1,6 @@
 import { MissingBibleKey } from '@/components/bible/MissingBibleKey';
 import { VerseList, VerseActionBar } from '@/components/bible/VerseList';
 import { AfterReadingSheet } from '@/components/duo/AfterReadingSheet';
-import { DuoQuestionCard } from '@/components/duo/DuoQuestionCard';
 import { StreakModal } from '@/components/streak/StreakModal';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -13,9 +12,8 @@ import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useBible } from '@/features/bible/BibleProvider';
 import { useBiblePassage } from '@/features/bible/useBiblePassage';
 import { useVerseActions } from '@/features/bible/useVerseActions';
-import { partnerFirstName } from '@/features/duo/labels';
 import { PERSONAL_NOTE_MAX } from '@/features/duo/moods';
-import { isDuoPlan, planCaption } from '@/features/plans/content';
+import { planCaption } from '@/features/plans/content';
 import type { MoodId } from '@/lib/types';
 import { radius, space, useTheme } from '@/theme';
 import { weekDaysSunday } from '@/lib/date';
@@ -26,38 +24,27 @@ import { Pressable, View } from 'react-native';
 
 export default function LecturaScreen() {
   const params = useLocalSearchParams<{ plan?: string; shot?: string }>();
-  const kind = params.plan === 'personal' ? 'personal' : 'group';
   const {
     state,
     today,
-    todayStatus,
     personalTodayStatus,
-    groupPlan,
     personalPlan,
-    todayGroupReading,
+    groupPlan,
     todayPersonalReading,
-    groupProgress,
+    todayGroupReading,
     personalProgress,
-    completeToday,
+    groupProgress,
     completePersonalToday,
     saveCheckIn,
-    saveHeartVerse,
-    saveDuoAnswer,
-    openReading,
     openPersonalReading,
     myCheckInToday,
-    myDuoAnswerToday,
-    friendDuoAnswerToday,
-    specialFriend,
-    hasDuo,
     soloStreak,
     selfId,
   } = useAppState();
 
-  const plan = kind === 'personal' ? personalPlan ?? groupPlan : groupPlan;
-  const day = kind === 'personal' ? (todayPersonalReading ?? todayGroupReading) : todayGroupReading;
-  const progress = kind === 'personal' ? (personalProgress ?? groupProgress) : groupProgress;
-  const friendName = partnerFirstName(specialFriend);
+  const plan = personalPlan ?? groupPlan;
+  const day = todayPersonalReading ?? todayGroupReading;
+  const progress = personalProgress ?? groupProgress;
 
   const [sheet, setSheet] = useState<'celebrate' | 'quiet' | null>(null);
   const [streakOpen, setStreakOpen] = useState(params.shot === 'racha');
@@ -76,12 +63,10 @@ export default function LecturaScreen() {
   });
 
   useEffect(() => {
-    if (kind === 'personal') openPersonalReading();
-    else openReading();
-  }, [kind, openPersonalReading, openReading]);
+    openPersonalReading();
+  }, [openPersonalReading]);
 
-  const alreadyDone = kind === 'personal' ? personalTodayStatus === 'completado' : todayStatus === 'completado';
-  const showDuo = kind === 'group' && hasDuo && Boolean(day.prompt);
+  const alreadyDone = personalTodayStatus === 'completado';
 
   const persistSheet = async (payload: {
     mood: MoodId;
@@ -90,19 +75,8 @@ export default function LecturaScreen() {
     duoAnswer: string;
   }) => {
     await saveCheckIn(payload.mood, payload.note);
-    const wantsMural = hasDuo && Boolean(payload.heartNote.trim());
-    if (wantsMural) {
-      await saveHeartVerse(day.featured.reference, day.featured.text, payload.heartNote);
-    }
-    if (showDuo && payload.duoAnswer.trim()) {
-      await saveDuoAnswer(payload.duoAnswer);
-    }
     setSheet(null);
-    if (wantsMural) {
-      router.push('/(tabs)/grupo');
-    } else {
-      router.replace('/(tabs)');
-    }
+    router.replace('/(tabs)');
   };
 
   return (
@@ -126,8 +100,7 @@ export default function LecturaScreen() {
         </AppText>
       </Pressable>
       <AppText variant="caption" tone="soft" style={{ marginTop: space.md }}>
-        {kind === 'personal' ? 'Plan personal · ' : isDuoPlan(plan) ? 'Plan de a dos · ' : ''}
-        {plan.title}
+        Plan personal · {plan.title}
       </AppText>
       <Pressable
         onPress={() => router.push({ pathname: '/biblia/leer', params: { ref: day.reference } })}
@@ -180,7 +153,7 @@ export default function LecturaScreen() {
           Leélo una vez más si hace falta. El día no se marca hasta que toqués completar.
         </AppText>
       </View>
-      {kind === 'personal' && !alreadyDone ? (
+      {!alreadyDone ? (
         <View style={{ marginBottom: space.lg }}>
           <AppText variant="label" tone="amber">
             Nota corta, solo para vos
@@ -188,7 +161,7 @@ export default function LecturaScreen() {
           <Field
             value={dayNote}
             onChangeText={(value) => setDayNote(value.slice(0, PERSONAL_NOTE_MAX))}
-            placeholder="Opcional. Queda en tu plan, no en el dúo."
+            placeholder="Opcional. Queda en tu plan."
             maxLength={PERSONAL_NOTE_MAX}
             multiline
           />
@@ -201,13 +174,8 @@ export default function LecturaScreen() {
           if (saving || alreadyDone) return;
           setSaving(true);
           try {
-            if (kind === 'personal') {
-              const next = await completePersonalToday(dayNote);
-              setResult({ personalStreak: next.soloStreak, groupStreak: 0, groupJustUnlocked: false });
-            } else {
-              const next = await completeToday();
-              setResult(next);
-            }
+            const next = await completePersonalToday(dayNote);
+            setResult({ personalStreak: next.soloStreak, groupStreak: 0, groupJustUnlocked: false });
             setStreakOpen(true);
             try {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -235,35 +203,11 @@ export default function LecturaScreen() {
           onPress={() => setSheet('quiet')}
         />
       ) : null}
-      {alreadyDone && showDuo && day.prompt ? (
-        <View style={{ marginTop: space.lg }}>
-          <DuoQuestionCard
-            question={day.prompt}
-            unlocked
-            myAnswer={myDuoAnswerToday}
-            friendAnswer={friendDuoAnswerToday}
-            friendName={friendName}
-            onSave={saveDuoAnswer}
-          />
-        </View>
-      ) : null}
       <StreakModal
         visible={streakOpen}
-        streak={
-          params.shot === 'racha'
-            ? 11
-            : kind === 'personal'
-              ? result.personalStreak || soloStreak
-              : result.personalStreak
-        }
+        streak={params.shot === 'racha' ? 11 : result.personalStreak || soloStreak}
         today={today}
-        completedDays={
-          params.shot === 'racha'
-            ? weekDaysSunday(today).slice(0, 3)
-            : kind === 'personal'
-              ? state.personalCompletedDates
-              : state.userCompletedDates
-        }
+        completedDays={params.shot === 'racha' ? weekDaysSunday(today).slice(0, 3) : state.personalCompletedDates}
         onContinue={() => {
           setStreakOpen(false);
           setSheet('celebrate');
@@ -276,10 +220,9 @@ export default function LecturaScreen() {
         streak={result.personalStreak}
         groupJustUnlocked={result.groupJustUnlocked}
         groupStreak={result.groupStreak}
-        friendName={friendName}
+        friendName=""
         featured={day.featured}
-        question={showDuo && day.prompt && !myDuoAnswerToday ? day.prompt : undefined}
-        hasDuo={hasDuo && kind === 'group'}
+        hasDuo={false}
         onSave={persistSheet}
         onSkip={() => setSheet(null)}
       />

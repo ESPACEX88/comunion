@@ -1,7 +1,7 @@
 /**
  * Capa de datos.
  *
- * Con sesión: Supabase (auth + dúo). AsyncStorage queda como caché.
+ * Con sesión: Supabase (auth + grupos). AsyncStorage queda como caché.
  * Sin sesión: el mock local de las fases 1–2.
  */
 

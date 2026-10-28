@@ -32,7 +32,11 @@ export function useGroupLive(groupId: string | undefined): GroupLiveValue {
   const [refreshing, setRefreshing] = useState(false);
 
   const reload = useCallback(async () => {
-    if (!groupId) return;
+    if (!groupId) {
+      setBundle(null);
+      setLoading(false);
+      return;
+    }
     try {
       const next = await loadBundle(groupId);
       setBundle(next);

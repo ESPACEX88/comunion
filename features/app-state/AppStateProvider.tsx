@@ -1,8 +1,6 @@
-import { bundleToState, liveCompletions, overlayPersonalPlan, overlayPlan } from '@/features/app-state/from-bundle';
+import { overlayPersonalPlan } from '@/features/app-state/from-bundle';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { asMood, CHECK_IN_NOTE_MAX, DUO_ANSWER_MAX, HEART_NOTE_MAX, JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX, PERSONAL_NOTE_MAX, PRAYER_MAX } from '@/features/duo/moods';
-import { SPECIAL_FRIEND_ID, friendCheckInForToday, friendDuoAnswerForToday, seedHeartVerses, seedPrayerRequests } from '@/features/duo/seeds';
-import { friendReadingDates, membersWithSelf, mockFriendCompletions } from '@/features/group/mock-members';
+import { asMood, CHECK_IN_NOTE_MAX, HEART_NOTE_MAX, JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX, PERSONAL_NOTE_MAX, PRAYER_MAX } from '@/features/duo/moods';
 import {
   CURRENT_USER_ID,
   EXAMPLE_GROUP_NAME,
@@ -11,14 +9,11 @@ import {
   SOLO_PSALMS_PLAN,
   SOLO_PSALMS_PLAN_ID,
   getPlan,
-  isDuoPlan,
-  makeInviteCode,
   newId,
   planProgress,
   type PlanProgress,
 } from '@/features/plans/content';
 import { dataSource } from '@/lib/data-source';
-import { subscribeDuoLive } from '@/lib/realtime';
 import { addDays, asDayKey, todayKey, weekStartMonday, yesterday } from '@/lib/date';
 import {
   consecutiveStreakWithGrace,
@@ -26,35 +21,23 @@ import {
   graceOffer,
   graceUsedThisWeek,
   groupDayProgress,
-  groupStreakWithGrace,
   withDate,
   type GraceOffer,
 } from '@/lib/streaks';
 import {
-  createDuo,
   ensurePersonalSalmosPlan,
-  ensurePsalmsPlan,
-  insertHeartVerse,
   insertJournalEntry,
-  insertPrayer,
-  joinDuo,
-  leaveDuo as leaveDuoRemote,
-  loadDuoBundle,
   loadJournalEntries,
   loadOwnCheckIns,
   loadPersonalCompletions,
   loadPersonalDays,
-  markPrayerAnswered,
   updateDisplayName,
   upsertCheckIn,
-  upsertCompletion,
   upsertPersonalCompletion,
-  upsertPlanAnswer,
 } from '@/lib/supabase-api';
 import type {
   CheckIn,
   DayStatus,
-  DuoAnswer,
   HeartVerse,
   JournalEntry,
   Member,
@@ -63,7 +46,6 @@ import type {
   PersistedState,
   Plan,
   PlanDay,
-  PlanKind,
   PrayerRequest,
 } from '@/lib/types';
 import {
@@ -72,7 +54,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -140,7 +121,6 @@ type AppContextValue = {
   hydrated: boolean;
   live: boolean;
   signedIn: boolean;
-  hasDuo: boolean;
   selfId: string;
   syncError: string | null;
   today: string;
@@ -161,16 +141,11 @@ type AppContextValue = {
   todayPersonalReading: PlanDay | null;
   groupProgress: PlanProgress;
   personalProgress: PlanProgress | null;
-  isDuoActive: boolean;
   grace: GraceOffer;
-  myDuoAnswerToday: DuoAnswer | null;
-  friendDuoAnswerToday: DuoAnswer | null;
-  saveDuoAnswer: (text: string) => Promise<void>;
   useGraceDay: () => void;
   simulateMissedDay: () => void;
   completeOnboarding: () => Promise<void>;
   enterSolo: () => Promise<void>;
-  leaveDuo: () => Promise<void>;
   ensureSoloPlan: () => Promise<void>;
   openReading: () => void;
   openPersonalReading: () => void;
@@ -187,9 +162,7 @@ type AppContextValue = {
   addPrayerRequest: (text: string) => void;
   markPrayed: (requestId: string) => void;
   saveJournalEntry: (input: { title: string; body: string; mood: MoodId | null; date?: string }) => Promise<void>;
-  specialFriend: Member;
   myCheckInToday: CheckIn | null;
-  friendCheckInToday: CheckIn | null;
   prayerRequests: PrayerRequest[];
   heartVerses: HeartVerse[];
   journalEntries: JournalEntry[];
@@ -204,30 +177,17 @@ type AppContextValue = {
 
 const AppStateContext = createContext<AppContextValue | null>(null);
 
-const pendingFriend: Member = {
-  id: 'pending',
-  name: 'Tu dúo',
-  hue: 'olive',
-  isSpecialFriend: true,
-};
-
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const { user, configured } = useAuth();
   const [hydrated, setHydrated] = useState(false);
   const [state, setState] = useState<PersistedState>(emptyState);
   const [draft, setDraftState] = useState<OnboardingDraft>(defaultDraft);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [liveBundleCompletions, setLiveBundleCompletions] = useState<Record<string, string[]> | null>(
-    null,
-  );
-  const [livePlan, setLivePlan] = useState<Plan | null>(null);
-  const [liveMembersList, setLiveMembersList] = useState<Member[] | null>(null);
   const [livePersonalPlan, setLivePersonalPlan] = useState<Plan | null>(null);
   const today = todayKey();
   const selfId = user?.id ?? CURRENT_USER_ID;
   const signedIn = Boolean(user);
-  const live = Boolean(user && state.remoteDuoId);
-  const hasDuo = live || (!user && state.duoEnabled);
+  const live = Boolean(user);
 
   useEffect(() => {
     let cancelled = false;
@@ -272,64 +232,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setLivePersonalPlan(overlayPersonalPlan(personalRow, personalDays));
       }
 
-      const personalPatch = {
+      setState((prev) => ({
+        ...prev,
         remotePersonalPlanId: personalRow?.id ?? null,
         personalPlanId: SOLO_PSALMS_PLAN_ID,
         personalPlanStartDate: asDayKey(personalRow?.startsOn ?? todayKey()),
         personalCompletedDates: personalCompletions.map((row) => row.completedOn),
         journalEntries: journal,
-      };
-
-      let bundle = await loadDuoBundle(user.id);
-      if (!bundle) {
-        setLiveBundleCompletions(null);
-        setLivePlan(null);
-        setLiveMembersList(null);
-        setState((prev) => ({
-          ...prev,
-          ...personalPatch,
-          userId: user.id,
-          userName: prev.userName || metaName,
-          remoteDuoId: null,
-          remotePlanId: null,
-          duoEnabled: false,
-          onboardingComplete: prev.onboardingComplete,
-          notificationsEnabled: prev.notificationsEnabled,
-          checkIns: ownCheckIns.map((row) => ({
-            id: row.id,
-            authorId: row.userId,
-            date: row.checkedOn,
-            mood: asMood(row.mood),
-            note: row.note,
-          })),
-        }));
-        setSyncError(null);
-        return;
-      }
-      if (!bundle.plan) {
-        await ensurePsalmsPlan(bundle.duo.id);
-        bundle = (await loadDuoBundle(user.id)) ?? bundle;
-      }
-      const next = bundleToState(emptyState(), bundle, user.id);
-      setLiveBundleCompletions(liveCompletions(bundle));
-      setLivePlan(overlayPlan(bundle));
-      setLiveMembersList(
-        bundle.members.map((member) => ({
-          id: member.userId,
-          name: member.displayName,
-          hue: member.userId === user.id ? 'amber' : 'olive',
-          isSelf: member.userId === user.id,
-          isSpecialFriend: member.userId !== user.id,
-        })),
-      );
-      setState((prev) => ({
-        ...next,
-        ...personalPatch,
-        duoEnabled: true,
+        userId: user.id,
+        userName: prev.userName || metaName,
+        remoteDuoId: null,
+        remotePlanId: null,
+        duoEnabled: false,
         notificationsEnabled: prev.notificationsEnabled,
-        inProgressDate: prev.inProgressDate,
-        personalInProgressDate: prev.personalInProgressDate,
-        userName: next.userName || prev.userName || metaName,
+        checkIns: ownCheckIns.map((row) => ({
+          id: row.id,
+          authorId: row.userId,
+          date: row.checkedOn,
+          mood: asMood(row.mood),
+          note: row.note,
+        })),
       }));
       setSyncError(null);
     } catch (error) {
@@ -349,12 +271,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (!user) {
-      setLiveBundleCompletions(null);
-      setLivePlan(null);
-      setLiveMembersList(null);
-      return;
-    }
+    if (!user) return;
     void refreshLive({ force: true });
   }, [user, refreshLive]);
 
@@ -366,50 +283,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, [live, refreshLive]);
 
-  const refreshLiveRef = useRef(refreshLive);
-  refreshLiveRef.current = refreshLive;
-
-  useEffect(() => {
-    if (!user || !state.remoteDuoId) return;
-    try {
-      return subscribeDuoLive(state.remoteDuoId, state.remotePlanId, () => {
-        void refreshLiveRef.current({ force: true });
-      });
-    } catch {
-      return undefined;
-    }
-  }, [state.remoteDuoId, state.remotePlanId, user]);
-
   const setDraft = useCallback((patch: Partial<OnboardingDraft>) => {
     setDraftState((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const members = useMemo(() => {
-    if (live && liveMembersList) {
-      return liveMembersList.map((member) =>
-        member.isSelf ? { ...member, name: state.userName || member.name } : member,
-      );
-    }
-    return membersWithSelf(state.userName);
-  }, [live, liveMembersList, state.userName]);
-
-  const friendDates = useMemo(
-    () => friendReadingDates(state.userCompletedDates, today),
-    [state.userCompletedDates, today],
+  const members = useMemo<Member[]>(
+    () => [
+      {
+        id: selfId,
+        name: state.userName || 'Vos',
+        hue: 'amber',
+        isSelf: true,
+      },
+    ],
+    [selfId, state.userName],
   );
 
-  const completions = useMemo(() => {
-    if (live) {
-      return {
-        ...(liveBundleCompletions ?? {}),
-        [selfId]: state.userCompletedDates,
-      };
-    }
-    return {
-      ...mockFriendCompletions(friendDates),
-      [CURRENT_USER_ID]: state.userCompletedDates,
-    };
-  }, [friendDates, live, liveBundleCompletions, selfId, state.userCompletedDates]);
+  const completions = useMemo(
+    () => ({ [selfId]: state.personalCompletedDates }),
+    [selfId, state.personalCompletedDates],
+  );
 
   const memberIds = useMemo(() => members.map((m) => m.id), [members]);
   const personalStreak = consecutiveStreakWithGrace(
@@ -418,9 +311,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     state.graceDates,
   );
   const soloStreak = consecutiveStreakWithGrace(state.personalCompletedDates, today, []);
-  const groupStreakCount = hasDuo
-    ? groupStreakWithGrace(memberIds, completions, today, state.graceDates)
-    : 0;
+  const groupStreakCount = 0;
   const todayStatus = dayStatus(state.userCompletedDates, state.inProgressDate, today);
   const personalTodayStatus = dayStatus(
     state.personalCompletedDates,
@@ -430,7 +321,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const groupToday = groupDayProgress(memberIds, completions, today);
   const grace = graceOffer(state.userCompletedDates, state.graceDates, today);
 
-  const groupPlan = livePlan ?? getPlan(state.groupPlanId) ?? getPlan(PSALMS_PLAN_ID)!;
+  const groupPlan = getPlan(state.groupPlanId) ?? getPlan(PSALMS_PLAN_ID)!;
   const personalPlan =
     livePersonalPlan ??
     (state.personalPlanId ? (getPlan(state.personalPlanId) ?? SOLO_PSALMS_PLAN) : null);
@@ -442,86 +333,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       : null;
   const todayPersonalReading = personalProgress?.day ?? null;
 
-  const specialFriend = members.find((member) => member.isSpecialFriend) ?? pendingFriend;
-
   const myCheckInToday =
     state.checkIns.find((item) => item.authorId === selfId && item.date === today) ?? null;
-  const friendCheckInToday = !hasDuo
-    ? null
-    : live
-      ? (state.checkIns.find((item) => item.authorId === specialFriend.id && item.date === today) ??
-        null)
-      : (state.checkIns.find((item) => item.authorId === SPECIAL_FRIEND_ID && item.date === today) ??
-        friendCheckInForToday(today));
-
-  const isDuoActive = hasDuo && (isDuoPlan(groupPlan) || Boolean(todayGroupReading.prompt));
-  const myDuoAnswerToday =
-    state.duoAnswers.find(
-      (item) => item.authorId === selfId && item.planDayId === todayGroupReading.id,
-    ) ?? null;
-  const friendDuoAnswerToday = live
-    ? (state.duoAnswers.find(
-        (item) => item.authorId === specialFriend.id && item.planDayId === todayGroupReading.id,
-      ) ?? null)
-      : hasDuo && todayStatus === 'completado' && todayGroupReading.prompt
-      ? (state.duoAnswers.find(
-          (item) => item.authorId === SPECIAL_FRIEND_ID && item.planDayId === todayGroupReading.id,
-        ) ?? friendDuoAnswerForToday(today, todayGroupReading.id, todayGroupReading.prompt))
-      : null;
-
-  const completeOnboarding = useCallback(async () => {
-    const name = draft.name.trim() || 'Amiga';
-    if (user) {
-      try {
-        if (draft.mode === 'join') {
-          await joinDuo(draft.inviteCode);
-        } else {
-          await createDuo(draft.groupName.trim() || name);
-        }
-        await updateDisplayName(user.id, name).catch(() => undefined);
-        await refreshLiveNow();
-        setSyncError(null);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'No se pudo guardar el dúo.';
-        setSyncError(message);
-        throw error;
-      }
-      return;
-    }
-
-    const joined =
-      draft.mode === 'join' &&
-      draft.inviteCode.trim().toUpperCase().replace(/\s/g, '') === EXAMPLE_INVITE_CODE;
-    const groupName =
-      draft.mode === 'join'
-        ? joined
-          ? EXAMPLE_GROUP_NAME
-          : `Grupo ${draft.inviteCode.trim().toUpperCase() || 'nuevo'}`
-        : draft.groupName.trim() || EXAMPLE_GROUP_NAME;
-    const inviteCode =
-      draft.mode === 'join'
-        ? draft.inviteCode.trim().toUpperCase().replace(/\s/g, '') || EXAMPLE_INVITE_CODE
-        : makeInviteCode(groupName);
-
-    const next: PersistedState = {
-      ...emptyState(),
-      onboardingComplete: true,
-      duoEnabled: true,
-      userName: name,
-      userId: `local-${newId()}`,
-      group: {
-        id: 'grupo-local',
-        name: groupName,
-        inviteCode,
-      },
-      groupPlanId: draft.planId || PSALMS_PLAN_ID,
-      groupPlanStartDate: todayKey(),
-      prayerRequests: seedPrayerRequests(),
-      heartVerses: seedHeartVerses(),
-    };
-    setState(next);
-    await dataSource.save(next);
-  }, [draft, refreshLiveNow, user]);
 
   const enterSolo = useCallback(async () => {
     const name = draft.name.trim() || 'Amiga';
@@ -562,32 +375,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     await dataSource.save(next);
   }, [draft.name, refreshLiveNow, user]);
 
-  const leaveDuo = useCallback(async () => {
-    if (user) {
-      await leaveDuoRemote();
-      await ensurePersonalSalmosPlan().catch(() => undefined);
-      setLiveBundleCompletions(null);
-      setLivePlan(null);
-      setLiveMembersList(null);
-      setState((prev) => ({
-        ...prev,
-        duoEnabled: false,
-        remoteDuoId: null,
-        remotePlanId: null,
-        onboardingComplete: true,
-      }));
-      await refreshLiveNow();
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      duoEnabled: false,
-      remoteDuoId: null,
-      remotePlanId: null,
-      onboardingComplete: true,
-    }));
-  }, [refreshLiveNow, user]);
+  const completeOnboarding = enterSolo;
 
   const ensureSoloPlan = useCallback(async () => {
     if (user) {
@@ -623,16 +411,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const completeToday = useCallback(async () => {
     const dates = withDate(state.userCompletedDates, today);
-    const nextCompletions = live
-      ? { ...(liveBundleCompletions ?? {}), [selfId]: dates }
-      : { ...mockFriendCompletions(dates), [CURRENT_USER_ID]: dates };
-    const ids = live ? Object.keys({ ...nextCompletions, [selfId]: dates }) : memberIds;
     const nextPersonal = consecutiveStreakWithGrace(dates, today, state.graceDates);
-    const nextGroup = groupStreakWithGrace(ids, nextCompletions, today, state.graceDates);
     const result = {
       personalStreak: nextPersonal,
-      groupStreak: nextGroup,
-      groupJustUnlocked: nextGroup > groupStreakCount,
+      groupStreak: 0,
+      groupJustUnlocked: false,
     };
 
     setState((prev) => ({
@@ -640,45 +423,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       userCompletedDates: withDate(prev.userCompletedDates, today),
       inProgressDate: null,
       personalBest: Math.max(prev.personalBest, nextPersonal),
-      groupBest: Math.max(prev.groupBest, nextGroup),
     }));
 
-    if (user && state.remoteDuoId) {
-      const duoId = state.remoteDuoId;
-      const dayNumber = groupProgress.absoluteDay;
-      await enqueueLiveWrite(async () => {
-        try {
-          const planId = state.remotePlanId ?? (await ensurePsalmsPlan(duoId));
-          await upsertCompletion({
-            planId,
-            userId: user.id,
-            dayNumber,
-            completedOn: today,
-            usedGrace: false,
-          });
-          await refreshLiveNow();
-        } catch (error: unknown) {
-          setSyncError(error instanceof Error ? error.message : 'No se pudo guardar el día.');
-        }
-      });
-    }
-
     return result;
-  }, [
-    groupStreakCount,
-    live,
-    liveBundleCompletions,
-    memberIds,
-    refreshLiveNow,
-    selfId,
-    state.graceDates,
-    state.remoteDuoId,
-    state.remotePlanId,
-    state.userCompletedDates,
-    today,
-    groupProgress.absoluteDay,
-    user,
-  ]);
+  }, [state.graceDates, state.userCompletedDates, today]);
 
   const completePersonalToday = useCallback(
     async (note?: string) => {
@@ -751,27 +499,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           },
         ],
       }));
-      if (user && state.remoteDuoId) {
-        const duoId = state.remoteDuoId;
-        const clippedNote = trimmedNote.slice(0, HEART_NOTE_MAX);
-        return enqueueLiveWrite(async () => {
-          try {
-            await insertHeartVerse({
-              duoId,
-              authorId: user.id,
-              reference,
-              text,
-              note: clippedNote,
-            });
-            await refreshLiveNow();
-          } catch (error: unknown) {
-            setSyncError(error instanceof Error ? error.message : 'No se pudo guardar el versículo.');
-          }
-        });
-      }
       return Promise.resolve();
     },
-    [refreshLiveNow, selfId, state.remoteDuoId, user],
+    [selfId],
   );
 
   const saveCheckIn = useCallback(
@@ -800,7 +530,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           try {
             await upsertCheckIn({
               userId: user.id,
-              duoId: state.remoteDuoId,
+              duoId: null,
               mood,
               note: clipped,
               checkedOn: today,
@@ -813,7 +543,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
       return Promise.resolve();
     },
-    [refreshLiveNow, selfId, state.remoteDuoId, today, user],
+    [refreshLiveNow, selfId, today, user],
   );
 
   const saveJournalEntry = useCallback(
@@ -881,18 +611,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           ...prev.prayerRequests,
         ],
       }));
-      if (user && state.remoteDuoId) {
-        void enqueueLiveWrite(async () => {
-          try {
-            await insertPrayer({ duoId: state.remoteDuoId!, authorId: user.id, body: clipped });
-            await refreshLiveNow();
-          } catch (error: unknown) {
-            setSyncError(error instanceof Error ? error.message : 'No se pudo dejar el pedido.');
-          }
-        });
-      }
     },
-    [refreshLiveNow, selfId, state.remoteDuoId, user],
+    [selfId],
   );
 
   const markPrayed = useCallback(
@@ -905,72 +625,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             : request,
         ),
       }));
-      if (user && state.remoteDuoId) {
-        void enqueueLiveWrite(async () => {
-          try {
-            await markPrayerAnswered(requestId);
-            await refreshLiveNow();
-          } catch (error: unknown) {
-            setSyncError(error instanceof Error ? error.message : 'No se pudo marcar la oración.');
-          }
-        });
-      }
     },
-    [refreshLiveNow, selfId, state.remoteDuoId, user],
-  );
-
-  const saveDuoAnswer = useCallback(
-    (text: string) => {
-      const clipped = text.trim().slice(0, DUO_ANSWER_MAX);
-      if (!clipped || !todayGroupReading.prompt) return Promise.resolve();
-      setState((prev) => {
-        const withoutMine = prev.duoAnswers.filter(
-          (item) => !(item.authorId === selfId && item.planDayId === todayGroupReading.id),
-        );
-        return {
-          ...prev,
-          duoAnswers: [
-            ...withoutMine,
-            {
-              id: newId('duo'),
-              authorId: selfId,
-              date: today,
-              planDayId: todayGroupReading.id,
-              question: todayGroupReading.prompt ?? '',
-              text: clipped,
-            },
-          ],
-        };
-      });
-      if (user && state.remoteDuoId) {
-        return enqueueLiveWrite(async () => {
-          try {
-            const planId = state.remotePlanId ?? (await ensurePsalmsPlan(state.remoteDuoId!));
-            await upsertPlanAnswer({
-              planId,
-              userId: user.id,
-              dayNumber: groupProgress.absoluteDay,
-              answer: clipped,
-            });
-            await refreshLiveNow();
-          } catch (error: unknown) {
-            setSyncError(error instanceof Error ? error.message : 'No se pudo guardar la respuesta.');
-          }
-        });
-      }
-      return Promise.resolve();
-    },
-    [
-      refreshLiveNow,
-      selfId,
-      state.remoteDuoId,
-      state.remotePlanId,
-      today,
-      groupProgress.absoluteDay,
-      todayGroupReading.id,
-      todayGroupReading.prompt,
-      user,
-    ],
+    [selfId],
   );
 
   const useGraceDay = useCallback(() => {
@@ -979,25 +635,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (prev.graceDates.includes(gap)) return prev;
       return { ...prev, graceDates: [...prev.graceDates, gap] };
     });
-    if (user && state.remoteDuoId) {
-      const gapProgress = planProgress(groupPlan, state.groupPlanStartDate, gap);
-      void enqueueLiveWrite(async () => {
-        try {
-          const planId = state.remotePlanId ?? (await ensurePsalmsPlan(state.remoteDuoId!));
-          await upsertCompletion({
-            planId,
-            userId: user.id,
-            dayNumber: gapProgress.absoluteDay,
-            completedOn: gap,
-            usedGrace: true,
-          });
-          await refreshLiveNow();
-        } catch (error: unknown) {
-          setSyncError(error instanceof Error ? error.message : 'No se pudo guardar la gracia.');
-        }
-      });
-    }
-  }, [groupPlan, refreshLiveNow, state.groupPlanStartDate, state.remoteDuoId, state.remotePlanId, today, user]);
+  }, [today]);
 
   const simulateMissedDay = useCallback(() => {
     const y = yesterday(today);
@@ -1100,7 +738,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     hydrated: hydrated && (configured ? true : true),
     live,
     signedIn,
-    hasDuo,
     selfId,
     syncError,
     today,
@@ -1121,16 +758,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     todayPersonalReading,
     groupProgress,
     personalProgress,
-    isDuoActive,
     grace,
-    myDuoAnswerToday,
-    friendDuoAnswerToday,
-    saveDuoAnswer,
     useGraceDay,
     simulateMissedDay,
     completeOnboarding,
     enterSolo,
-    leaveDuo,
     ensureSoloPlan,
     openReading,
     openPersonalReading,
@@ -1143,9 +775,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     addPrayerRequest,
     markPrayed,
     saveJournalEntry,
-    specialFriend,
     myCheckInToday,
-    friendCheckInToday,
     prayerRequests: state.prayerRequests,
     heartVerses: state.heartVerses,
     journalEntries: state.journalEntries,
@@ -1169,4 +799,3 @@ export function useAppState(): AppContextValue {
   return ctx;
 }
 
-export type { PlanKind };

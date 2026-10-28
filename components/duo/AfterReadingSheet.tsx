@@ -2,7 +2,7 @@ import { MoodChips } from '@/components/duo/MoodChips';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
-import { CHECK_IN_NOTE_MAX, DUO_ANSWER_MAX, HEART_NOTE_MAX } from '@/features/duo/moods';
+import { CHECK_IN_NOTE_MAX, HEART_NOTE_MAX } from '@/features/duo/moods';
 import type { FeaturedVerse, MoodId } from '@/lib/types';
 import { Field } from '@/components/ui/Field';
 import { radius, space, useTheme } from '@/theme';
@@ -17,7 +17,6 @@ type Props = {
   groupStreak?: number;
   friendName: string;
   featured: FeaturedVerse;
-  question?: string;
   hasDuo?: boolean;
   onSave: (payload: { mood: MoodId; note: string; heartNote: string; duoAnswer: string }) => void;
   onSkip: () => void;
@@ -31,8 +30,7 @@ export function AfterReadingSheet({
   groupStreak = 0,
   friendName,
   featured,
-  question,
-  hasDuo = true,
+  hasDuo = false,
   onSave,
   onSkip,
 }: Props) {
@@ -110,7 +108,7 @@ export function AfterReadingSheet({
             <Field
               value={note}
               onChangeText={(value) => setNote(value.slice(0, CHECK_IN_NOTE_MAX))}
-              placeholder="Una línea. Es entre vos y ella."
+              placeholder="Una línea. Queda en tu espacio."
               maxLength={CHECK_IN_NOTE_MAX}
               multiline
               tall
@@ -145,33 +143,6 @@ export function AfterReadingSheet({
                 />
                 <AppText variant="caption" tone="soft">
                   Si escribís una nota, se guarda en el mural de las dos.
-                </AppText>
-              </View>
-            ) : null}
-            {question ? (
-              <View
-                style={{
-                  marginTop: space.md,
-                  paddingTop: space.md,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.line,
-                }}>
-                <AppText variant="label" tone="olive">
-                  Pregunta de a dos
-                </AppText>
-                <AppText variant="ui" style={{ marginTop: 8 }}>
-                  {question}
-                </AppText>
-                <Field
-                  value={duoAnswer}
-                  onChangeText={(value) => setDuoAnswer(value.slice(0, DUO_ANSWER_MAX))}
-                  placeholder="Una respuesta corta, para ella y para vos."
-                  maxLength={DUO_ANSWER_MAX}
-                  multiline
-                  tall
-                />
-                <AppText variant="caption" tone="soft">
-                  {duoAnswer.length}/{DUO_ANSWER_MAX} · opcional
                 </AppText>
               </View>
             ) : null}

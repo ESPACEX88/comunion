@@ -98,12 +98,10 @@ function ThemedRoot() {
                   <Stack.Screen name="onboarding" />
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="lectura" />
-                  <Stack.Screen name="nosotros" />
                   <Stack.Screen name="diario" />
                   <Stack.Screen name="check-in" />
                   <Stack.Screen name="recordatorios" />
                   <Stack.Screen name="biblia" />
-                  <Stack.Screen name="amigos" />
                   <Stack.Screen name="grupo" />
                 </Stack>
               </GroupsProvider>

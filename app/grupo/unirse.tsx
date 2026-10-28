@@ -4,6 +4,7 @@ import { BackLink } from '@/components/ui/BackLink';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { Screen } from '@/components/ui/Screen';
+import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useGroups } from '@/features/groups/GroupsProvider';
 import { space, useTheme } from '@/theme';
@@ -13,6 +14,7 @@ import { useEffect, useState } from 'react';
 export default function UnirseGrupo() {
   const { session } = useAuth();
   const { joinGroup } = useGroups();
+  const { setDraft, enterSolo, state } = useAppState();
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ code?: string }>();
   const [code, setCode] = useState('');
@@ -21,11 +23,14 @@ export default function UnirseGrupo() {
 
   useEffect(() => {
     if (typeof params.code === 'string' && params.code.trim()) {
-      setCode(params.code.trim().toUpperCase());
+      const next = params.code.trim().toUpperCase();
+      setCode(next);
+      setDraft({ inviteCode: next, mode: 'join' });
     }
-  }, [params.code]);
+  }, [params.code, setDraft]);
 
   const onJoin = async () => {
+    setDraft({ inviteCode: code.trim().toUpperCase(), mode: 'join' });
     if (!session) {
       router.push('/onboarding');
       return;
@@ -34,6 +39,7 @@ export default function UnirseGrupo() {
     setError(null);
     try {
       const id = await joinGroup(code);
+      if (!state.onboardingComplete) await enterSolo();
       router.replace({ pathname: '/grupo/[id]', params: { id } });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'No se pudo unir.');
@@ -44,7 +50,7 @@ export default function UnirseGrupo() {
 
   return (
     <Screen>
-      <BackLink label="Grupos" />
+      <BackLink label="Grupo" />
       <Enter>
         <AppText variant="label" tone="amber" style={{ marginTop: space.lg }}>
           Unirme
@@ -53,7 +59,7 @@ export default function UnirseGrupo() {
           Un código, y ya estás
         </AppText>
         <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-          Seis letras o números. El dúo no se toca. Esto es el grupo de iglesia.
+          Seis letras o números. Quien te invitó te los pasa, o abrís el enlace.
         </AppText>
       </Enter>
       <Field
@@ -77,7 +83,7 @@ export default function UnirseGrupo() {
       />
       {!session ? (
         <AppText variant="caption" tone="soft" style={{ marginTop: space.md, textAlign: 'center' }}>
-          Creá la cuenta y volvé a pegar el código. Así el grupo queda en todos tus teléfonos.
+          Creá la cuenta: el código queda listo para unirte después.
         </AppText>
       ) : null}
     </Screen>

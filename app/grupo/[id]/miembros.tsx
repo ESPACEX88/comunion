@@ -101,7 +101,7 @@ export default function GrupoMiembros() {
               {bundle.group.inviteCode}
             </AppText>
             <AppText variant="caption" tone="soft" style={{ marginTop: 4, letterSpacing: 0 }}>
-              Compartilo. Quien lo ponga entra al grupo, no al dúo.
+              Compartilo. Quien lo ponga o abra el enlace entra al grupo.
             </AppText>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
               <View style={{ flex: 1 }}>

@@ -28,7 +28,7 @@ export default function OnboardingName() {
       </Enter>
       <Ornament />
       <AppText variant="body" tone="soft">
-        Esto queda en este teléfono. Podés entrar ya a tu espacio, o más adelante sumar un dúo.
+        Esto queda en este teléfono. Con una cuenta podés crear un grupo o unirte con un código.
       </AppText>
       <View style={{ height: space.xl }} />
       <AppText variant="label" tone="amber">
@@ -56,7 +56,7 @@ export default function OnboardingName() {
         disabled={draft.name.trim().length < 2 || busy}
       />
       <Button
-        label="Prefiero un dúo"
+        label="Crear o unirme a un grupo"
         variant="ghost"
         onPress={() => router.push('/onboarding/grupo')}
         style={{ marginTop: 10 }}

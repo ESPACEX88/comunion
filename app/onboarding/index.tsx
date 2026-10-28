@@ -75,7 +75,7 @@ export default function OnboardingAccount() {
           {mode === 'crear' ? 'Tu espacio' : 'Buenas'}
         </AppText>
         <AppText variant="ui" tone="soft" style={{ marginTop: 8, textAlign: 'center' }}>
-          {mode === 'crear' ? 'Un nombre, un correo. El dúo se suma después.' : 'Entrá con tu correo. Tu día te espera.'}
+          {mode === 'crear' ? 'Un nombre, un correo. Después, tu grupo.' : 'Entrá con tu correo. Tu grupo te espera.'}
         </AppText>
       </Enter>
 

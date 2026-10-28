@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 export default function CheckInScreen() {
-  const { members, myCheckInToday, saveCheckIn, hasDuo } = useAppState();
+  const { members, myCheckInToday, saveCheckIn } = useAppState();
   const self = members.find((member) => member.isSelf) ?? members[0];
 
   return (
@@ -31,7 +31,7 @@ export default function CheckInScreen() {
         <View style={{ marginTop: space.md }}>
           <CheckInComposer
             submitLabel="Dejar mi check-in"
-            hint={hasDuo ? 'Una línea alcanza. Tu dúo también la ve.' : 'Una línea alcanza. Es para vos.'}
+            hint="Una línea alcanza. Es para vos."
             onSave={async (mood, note) => {
               await saveCheckIn(mood, note);
               router.back();

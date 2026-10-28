@@ -1,7 +1,7 @@
 import { useTheme } from '@/theme';
 import { View } from 'react-native';
 
-type Kind = 'hoy' | 'grupo' | 'grupos' | 'planes' | 'yo';
+type Kind = 'hoy' | 'grupo' | 'grupos' | 'biblia' | 'planes' | 'yo';
 
 export function TabMark({
   kind,
@@ -87,6 +87,22 @@ export function TabMark({
             borderWidth: 2,
             borderColor: color,
             marginLeft: -4,
+          }}
+        />
+      </View>
+    );
+  }
+
+  if (kind === 'biblia') {
+    return (
+      <View style={{ width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            width: 13,
+            height: 16,
+            borderRadius: 3,
+            borderWidth: 2,
+            borderColor: color,
           }}
         />
       </View>

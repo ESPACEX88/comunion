@@ -3,34 +3,23 @@ import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
-import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
+import { useLiveSyncControls } from '@/features/app-state/useLiveSync';
 import { SOLO_PSALMS_PLAN, planCaption } from '@/features/plans/content';
-import { space, useTheme } from '@/theme';
+import { space } from '@/theme';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 export default function PlanesScreen() {
   const {
-    state,
-    groupPlan,
     personalPlan,
-    todayGroupReading,
     todayPersonalReading,
-    groupProgress,
     personalProgress,
     ensureSoloPlan,
-    openReading,
     openPersonalReading,
     soloStreak,
     personalTodayStatus,
-    hasDuo,
   } = useAppState();
-  const { refreshing, onRefresh } = useDuoSyncControls();
-  const { colors } = useTheme();
-  const [lane, setLane] = useState<'personal' | 'duo'>('personal');
-  const showDuoLane = hasDuo;
-  const active = showDuoLane && lane === 'duo' ? 'duo' : 'personal';
+  const { refreshing, onRefresh } = useLiveSyncControls();
   const plan = personalPlan ?? SOLO_PSALMS_PLAN;
   const day = todayPersonalReading ?? plan.days[0];
 
@@ -40,112 +29,40 @@ export default function PlanesScreen() {
         Planes
       </AppText>
       <AppText variant="title" style={{ marginTop: 8 }}>
-        {active === 'personal' ? 'Lo tuyo' : 'De a dos'}
+        Lo tuyo
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-        {hasDuo
-          ? 'Personal y dúo no se mezclan. Cada racha es de su mesa.'
-          : 'Tu plan en solitario. Un dúo se puede sumar después.'}
+        Tu plan personal. El del grupo vive en Hoy y en Grupo.
       </AppText>
 
-      {showDuoLane ? (
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: space.lg }}>
-          {(
-            [
-              { id: 'personal' as const, label: 'Personal' },
-              { id: 'duo' as const, label: 'De a dos' },
-            ] as const
-          ).map((option) => {
-            const on = active === option.id;
-            return (
-              <Pressable
-                key={option.id}
-                onPress={() => setLane(option.id)}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: on ? colors.amber : colors.line,
-                  backgroundColor: on ? colors.paper : 'transparent',
-                  alignItems: 'center',
-                }}>
-                <AppText variant="ui" tone={on ? 'amber' : 'soft'}>
-                  {option.label}
-                </AppText>
-              </Pressable>
-            );
-          })}
+      <View style={{ marginTop: space.xl }}>
+        <AppText variant="subtitle">{plan.title}</AppText>
+        <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
+          {plan.durationLabel} · racha {soloStreak}
+          {personalTodayStatus === 'completado' ? ' · hoy listo' : ''}
+        </AppText>
+        <View style={{ marginTop: space.lg }}>
+          <ProgressBar value={personalProgress?.dayNumber ?? day.dayNumber} total={plan.days.length} />
+          <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
+            {personalProgress ? planCaption(personalProgress) : `Día ${day.dayNumber} de ${plan.days.length}`}
+          </AppText>
         </View>
-      ) : null}
-
-      {active === 'personal' ? (
-        <View style={{ marginTop: space.xl }}>
-          <AppText variant="subtitle">{plan.title}</AppText>
-          <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
-            {plan.durationLabel} · racha {soloStreak}
-            {personalTodayStatus === 'completado' ? ' · hoy listo' : ''}
-          </AppText>
-          <View style={{ marginTop: space.lg }}>
-            <ProgressBar value={personalProgress?.dayNumber ?? day.dayNumber} total={plan.days.length} />
-            <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-              {personalProgress ? planCaption(personalProgress) : `Día ${day.dayNumber} de ${plan.days.length}`}
-            </AppText>
-          </View>
-          <AppText variant="subtitle" style={{ marginTop: space.xl }}>
-            {day.reference}
-          </AppText>
-          <AppText variant="body" tone="soft" style={{ marginTop: 6 }}>
-            {day.title}
-          </AppText>
-          {day.prompt ? (
-            <AppText variant="ui" italic tone="soft" style={{ marginTop: space.md }}>
-              {day.prompt}
-            </AppText>
-          ) : null}
-          <Button
-            label={personalPlan ? 'Abrir tu lectura de hoy' : 'Empezar Salmos en solitario'}
-            style={{ marginTop: space.xl }}
-            onPress={async () => {
-              if (!personalPlan) await ensureSoloPlan();
-              openPersonalReading();
-              router.push({ pathname: '/lectura', params: { plan: 'personal' } });
-            }}
-          />
-        </View>
-      ) : (
-        <View style={{ marginTop: space.xl }}>
-          <AppText variant="subtitle">{groupPlan.title}</AppText>
-          <AppText variant="ui" tone="soft" style={{ marginTop: 6 }}>
-            {groupPlan.durationLabel} · {state.group.name}
-          </AppText>
-          <View style={{ marginTop: space.lg }}>
-            <ProgressBar value={groupProgress.dayNumber} total={groupPlan.days.length} />
-            <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-              {planCaption(groupProgress)}
-            </AppText>
-          </View>
-          <AppText variant="subtitle" style={{ marginTop: space.xl }}>
-            {todayGroupReading.reference}
-          </AppText>
-          <AppText variant="body" tone="soft" style={{ marginTop: 6 }}>
-            {todayGroupReading.title}
-          </AppText>
-          {todayGroupReading.prompt ? (
-            <AppText variant="ui" italic tone="soft" style={{ marginTop: space.md }}>
-              {todayGroupReading.prompt}
-            </AppText>
-          ) : null}
-          <Button
-            label="Abrir la lectura de a dos"
-            style={{ marginTop: space.xl }}
-            onPress={() => {
-              openReading();
-              router.push({ pathname: '/lectura', params: { plan: 'group' } });
-            }}
-          />
-        </View>
-      )}
+        <AppText variant="subtitle" style={{ marginTop: space.xl }}>
+          {day.reference}
+        </AppText>
+        <AppText variant="body" tone="soft" style={{ marginTop: 6 }}>
+          {day.title}
+        </AppText>
+        <Button
+          label={personalPlan ? 'Abrir tu lectura de hoy' : 'Empezar Salmos'}
+          style={{ marginTop: space.xl }}
+          onPress={async () => {
+            if (!personalPlan) await ensureSoloPlan();
+            openPersonalReading();
+            router.push({ pathname: '/lectura', params: { plan: 'personal' } });
+          }}
+        />
+      </View>
     </Screen>
   );
 }
