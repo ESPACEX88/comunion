@@ -30,7 +30,7 @@ export default function DiarioNuevaScreen() {
         Escribí despacio
       </AppText>
       <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-        Queda en tu espacio. Nadie del dúo lo ve.
+        Queda en tu espacio. El grupo no lo ve.
       </AppText>
 
       <AppText variant="label" tone="amber" style={{ marginTop: space.xl }}>

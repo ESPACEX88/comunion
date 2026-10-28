@@ -17,7 +17,7 @@ export default function Index() {
     return <Redirect href="/onboarding" />;
   }
 
-  if (state.onboardingComplete || state.remoteDuoId) {
+  if (state.onboardingComplete) {
     return <Redirect href="/(tabs)" />;
   }
 

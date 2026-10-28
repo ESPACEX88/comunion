@@ -2,7 +2,7 @@ import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
-/** Al volver a Hoy / Nosotros / Planes / Yo, pide el dúo de nuevo. */
+/** Al volver a Hoy / Grupo / Planes / Yo, pide el estado de nuevo. */
 export function useRefreshOnFocus() {
   const { signedIn, refreshLive } = useAppState();
   useFocusEffect(
@@ -33,7 +33,7 @@ export function useLivePullToRefresh() {
   };
 }
 
-export function useDuoSyncControls() {
+export function useLiveSyncControls() {
   useRefreshOnFocus();
   return useLivePullToRefresh();
 }

@@ -4,9 +4,7 @@ import { BackLink } from '@/components/ui/BackLink';
 import { Button } from '@/components/ui/Button';
 import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
-import { SettingsCard } from '@/components/ui/SettingsCard';
 import { Toggle } from '@/components/ui/Toggle';
-import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useReminders } from '@/features/reminders/ReminderProvider';
 import { formatClock, remindersSupported } from '@/lib/reminders';
 import { space, useTheme } from '@/theme';
@@ -14,7 +12,6 @@ import { useEffect, useRef } from 'react';
 import { Alert, Platform, View } from 'react-native';
 
 export default function RecordatoriosScreen() {
-  const { hasDuo } = useAppState();
   const { prefs, ready, permission, updatePrefs, requestAccess, preview } = useReminders();
   const { colors } = useTheme();
   const asked = useRef(false);
@@ -26,7 +23,7 @@ export default function RecordatoriosScreen() {
     return new Promise<boolean>((resolve) => {
       Alert.alert(
         'Un aviso, despacio',
-        'Comunión puede tocarte a la hora que elijas — para tu lectura o para el dúo. No es ruido: es un toque para volver.',
+        'Comunión puede tocarte a la hora que elijas. No es ruido: es un toque para volver.',
         [
           { text: 'Ahora no', style: 'cancel', onPress: () => resolve(false) },
           {
@@ -43,10 +40,10 @@ export default function RecordatoriosScreen() {
   useEffect(() => {
     if (!ready || asked.current) return;
     if (permission !== 'undetermined') return;
-    if (!prefs.soloEnabled && !(hasDuo && prefs.duoEnabled)) return;
+    if (!prefs.soloEnabled) return;
     asked.current = true;
     void askIfNeeded();
-  }, [hasDuo, permission, prefs.duoEnabled, prefs.soloEnabled, ready]);
+  }, [permission, prefs.soloEnabled, ready]);
 
   const toggleSolo = async (value: boolean) => {
     if (value) {
@@ -54,14 +51,6 @@ export default function RecordatoriosScreen() {
       if (!ok) return;
     }
     await updatePrefs({ soloEnabled: value });
-  };
-
-  const toggleDuo = async (value: boolean) => {
-    if (value) {
-      const ok = await askIfNeeded();
-      if (!ok) return;
-    }
-    await updatePrefs({ duoEnabled: value });
   };
 
   return (
@@ -117,44 +106,6 @@ export default function RecordatoriosScreen() {
           onChange={(soloHour, soloMinute) => void updatePrefs({ soloHour, soloMinute })}
         />
       </View>
-
-      {hasDuo ? (
-        <>
-          <View
-            style={{
-              marginTop: space.xl,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: space.md,
-            }}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <AppText variant="label" tone="amber">
-                Juntos
-              </AppText>
-              <AppText variant="subtitle" style={{ marginTop: 6 }}>
-                Oración o el plan de a dos
-              </AppText>
-              <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-                Al caer el día. Ahora a las {formatClock(prefs.duoHour, prefs.duoMinute)}.
-              </AppText>
-            </View>
-            <Toggle value={prefs.duoEnabled} onValueChange={(value) => void toggleDuo(value)} />
-          </View>
-          <View style={{ marginTop: space.md }}>
-            <TimeStepper
-              hour={prefs.duoHour}
-              minute={prefs.duoMinute}
-              disabled={!prefs.duoEnabled}
-              onChange={(duoHour, duoMinute) => void updatePrefs({ duoHour, duoMinute })}
-            />
-          </View>
-        </>
-      ) : (
-        <AppText variant="caption" tone="soft" style={{ marginTop: space.xl }}>
-          El aviso de Juntos aparece cuando haya dúo.
-        </AppText>
-      )}
 
       {remindersSupported() ? (
         <Button

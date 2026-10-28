@@ -25,7 +25,7 @@ export default function DiarioScreen() {
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        Esto no aparece en Nosotros. Ni en el mural. Ni en el check-in del dúo.
+        Esto no aparece en el grupo. Queda entre vos y Él.
       </AppText>
       <Button
         label="Escribir una entrada"

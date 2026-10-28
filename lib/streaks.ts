@@ -18,9 +18,9 @@ import type { DayProgress, DayStatus } from '@/lib/types';
  *
  * Racha de grupo
  * --------------
- * El grupo suma el día únicamente cuando TODOS los miembros actuales
- * completaron la lectura de esa fecha. Hasta entonces se muestra
- * "X de Y leyeron hoy". La gracia del usuario también puentea el dúo/grupo.
+ * El grupo suma el día cuando al menos la mitad (redondeada hacia arriba)
+ * ya leyó esa fecha. Hasta entonces se muestra "X de Y leyeron hoy".
+ * Un hueco por semana no rompe la racha.
  */
 
 export const GRACE_PER_WEEK = 1;

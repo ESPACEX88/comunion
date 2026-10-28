@@ -89,9 +89,9 @@ export function ComunionTabBar({
           const kind =
             route.name === 'index'
               ? 'hoy'
-              : route.name === 'grupo'
-                ? 'grupo'
-                : route.name === 'grupos'
+              : route.name === 'biblia'
+                ? 'biblia'
+                : route.name === 'grupos' || route.name === 'grupo'
                   ? 'grupos'
                   : route.name === 'planes'
                     ? 'planes'

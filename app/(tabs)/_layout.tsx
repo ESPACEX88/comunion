@@ -22,10 +22,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="grupo"
+        name="biblia"
         options={{
-          title: 'Dúo',
-          tabBarIcon: ({ focused }) => <TabMark kind="grupo" focused={focused} />,
+          title: 'Biblia',
+          tabBarIcon: ({ focused }) => <TabMark kind="biblia" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -40,6 +40,13 @@ export default function TabLayout() {
         options={{
           title: 'Yo',
           tabBarIcon: ({ focused }) => <TabMark kind="yo" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="grupo"
+        options={{
+          href: null,
+          title: 'Grupo',
         }}
       />
       <Tabs.Screen

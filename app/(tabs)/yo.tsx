@@ -7,9 +7,8 @@ import { Field } from '@/components/ui/Field';
 import { Screen } from '@/components/ui/Screen';
 import { SettingsCard } from '@/components/ui/SettingsCard';
 import { Toggle } from '@/components/ui/Toggle';
-import { confirmLeaveDuo } from '@/features/duo/leaveConfirm';
 import { useAppState } from '@/features/app-state/AppStateProvider';
-import { useDuoSyncControls } from '@/features/app-state/useDuoSync';
+import { useLiveSyncControls } from '@/features/app-state/useLiveSync';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useGroups } from '@/features/groups/GroupsProvider';
 import { useReminders } from '@/features/reminders/ReminderProvider';
@@ -34,14 +33,12 @@ export default function YoScreen() {
     setUserName,
     resetLocalData,
     live,
-    hasDuo,
     signedIn,
     soloStreak,
     journalEntries,
     personalPlan,
-    leaveDuo,
   } = useAppState();
-  const { refreshing, onRefresh } = useDuoSyncControls();
+  const { refreshing, onRefresh } = useLiveSyncControls();
   const { signOut, user } = useAuth();
   const { groups } = useGroups();
   const { prefs, cancelAll, updatePrefs } = useReminders();
@@ -49,25 +46,20 @@ export default function YoScreen() {
   const params = useLocalSearchParams<{ shot?: string }>();
   const self = members.find((m) => m.isSelf) ?? members[0];
   const history = lastNDays(today, 14);
-  const showLeave = hasDuo || params.shot === 'duo';
 
   useEffect(() => {
-    if (params.shot === 'duo' || params.shot === 'ajustes') setPreference('dark');
+    if (params.shot === 'ajustes') setPreference('dark');
   }, [params.shot, setPreference]);
-
-  const runLeave = () => {
-    void leaveDuo().then(() => router.replace('/(tabs)/grupo'));
-  };
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <View style={{ marginTop: space.lg }}>
-        <Avatar name={state.userName} hue={self.hue} />
+        <Avatar name={state.userName} hue={self?.hue ?? 'amber'} />
         <AppText variant="title" style={{ marginTop: 12 }}>
           {state.userName || 'Vos'}
         </AppText>
         <AppText variant="ui" tone="soft" style={{ marginTop: 4 }}>
-          {user?.email || (showLeave ? `${state.group.name}${live ? ' · en la nube' : ''}` : 'En solitario, por ahora')}
+          {user?.email || (live ? 'En la nube' : 'En este teléfono, por ahora')}
         </AppText>
       </View>
 
@@ -79,20 +71,14 @@ export default function YoScreen() {
           autoCapitalize="words"
         />
         <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-          {hasDuo ? 'Así te ve tu dúo.' : 'Así te vas a ver cuando haya dúo.'}
+          Así te ve tu grupo.
         </AppText>
       </SettingsCard>
 
       <SettingsCard title="Tu espacio" style={{ marginTop: space.xl }}>
         <HubEntry
-          kicker="Biblia"
-          title="Leer la Biblia"
-          hint="Libros y capítulos. El texto completo, si hay clave de API.Bible."
-          onPress={() => router.push('/biblia')}
-        />
-        <HubEntry
           kicker="Diario"
-          title="Lo que no va al dúo"
+          title="Solo entre vos y Él"
           hint={
             journalEntries.length === 0
               ? 'Todavía en blanco. Una fecha, un cuerpo, un ánimo si querés.'
@@ -105,7 +91,7 @@ export default function YoScreen() {
           title={personalPlan?.title ?? 'Salmos en solitario'}
           hint={
             soloStreak === 0
-              ? 'Tu racha personal, aparte de la de a dos.'
+              ? 'Tu racha personal, aparte de la del grupo.'
               : `${soloStreak} ${soloStreak === 1 ? 'día seguido' : 'días seguidos'}.`
           }
           onPress={() => router.push('/(tabs)/planes')}
@@ -117,41 +103,20 @@ export default function YoScreen() {
               ? `Tu momento · ${formatClock(prefs.soloHour, prefs.soloMinute)}`
               : 'Tu momento está apagado'
           }
-          hint={
-            hasDuo
-              ? prefs.duoEnabled
-                ? `Juntos a las ${formatClock(prefs.duoHour, prefs.duoMinute)}. Se puede apagar.`
-                : 'Juntos está apagado. El aviso de a dos se enciende acá.'
-              : 'Avisos en este teléfono. Juntos aparece cuando haya dúo.'
-          }
+          hint="Avisos en este teléfono, a la hora que elijas."
           onPress={() => router.push('/recordatorios')}
         />
         <HubEntry
-          kicker="Amigos"
-          title="Tu red"
-          hint="Más ancha que el dúo. Un código, un sí."
-          onPress={() => router.push('/amigos')}
-        />
-        <HubEntry
           kicker="Grupo"
-          title="La iglesia, de a varios"
+          title={groups.length === 0 ? 'Crear o unirme' : groups.length === 1 ? groups[0].name : 'Tus grupos'}
           hint={
             groups.length === 0
-              ? 'Un código, un sí. El dúo no se toca.'
+              ? 'Leer juntos, orar, un versículo y un reto.'
               : `${groups.length} ${groups.length === 1 ? 'grupo' : 'grupos'}.`
           }
           onPress={() => router.push('/(tabs)/grupos')}
-          last={hasDuo}
+          last
         />
-        {!hasDuo ? (
-          <HubEntry
-            kicker="Dúo"
-            title="Sumar a alguien"
-            hint="Cuando quieras. No es requisito para seguir leyendo."
-            onPress={() => router.push('/onboarding/grupo')}
-            last
-          />
-        ) : null}
       </SettingsCard>
 
       <SettingsCard title="Apariencia" style={{ marginTop: space.xl }}>
@@ -202,7 +167,7 @@ export default function YoScreen() {
           <View style={{ flex: 1, paddingRight: 12 }}>
             <AppText variant="ui">Recordatorios</AppText>
             <AppText variant="caption" tone="soft" style={{ marginTop: 2, letterSpacing: 0 }}>
-              Horarios y el aviso de a dos
+              Horario de tu momento
             </AppText>
           </View>
           <AppText variant="ui" tone="amber" onPress={() => router.push('/recordatorios')}>
@@ -238,15 +203,6 @@ export default function YoScreen() {
       </SettingsCard>
 
       <SettingsCard title="Cuenta" style={{ marginTop: space.xl }}>
-        {showLeave ? (
-          <Button
-            label="Salir del dúo"
-            variant="danger"
-            testID="leave-duo"
-            onPress={() => confirmLeaveDuo(runLeave)}
-          />
-        ) : null}
-        <View style={{ height: showLeave ? space.sm : 0 }} />
         {signedIn ? (
           <Button
             label="Cerrar sesión"
@@ -261,7 +217,7 @@ export default function YoScreen() {
           <Button label="Crear cuenta" onPress={() => router.push('/onboarding')} />
         )}
         <AppText variant="caption" tone="soft" style={{ marginTop: 10 }}>
-          Salir del dúo no borra tu cuenta. Después podés crear o unirte otra vez.
+          Cerrar sesión no borra el grupo. Volvés a entrar con el mismo correo.
         </AppText>
       </SettingsCard>
 

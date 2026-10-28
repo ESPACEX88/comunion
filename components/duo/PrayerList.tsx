@@ -66,9 +66,7 @@ export function PrayerList({ requests, members, friendName, selfId, onPray, just
               />
             ) : (
               <AppText variant="caption" tone="soft" style={{ marginTop: space.sm }}>
-                {mine
-                  ? 'Ella va a ver este pedido en su mesa.'
-                  : 'Este pedido es de la mesa, no del dúo.'}
+                Este pedido queda en tu espacio.
               </AppText>
             )}
           </Card>

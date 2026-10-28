@@ -1,7 +1,6 @@
 import { Enter } from '@/components/motion/Enter';
 import { PressScale } from '@/components/motion/PressScale';
 import { AppText } from '@/components/ui/AppText';
-import { AuroraOrb } from '@/components/ui/AuroraOrb';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -13,6 +12,9 @@ import {
   GROUP_EMOJIS,
   type GroupColorId,
 } from '@/features/groups/challenges';
+import { GROUP_WHAT_IT_IS } from '@/features/groups/copy';
+import { GroupHomeView } from '@/features/groups/GroupHomeView';
+import { GroupWelcome } from '@/features/groups/GroupWelcome';
 import { useGroups } from '@/features/groups/GroupsProvider';
 import { space, useTheme } from '@/theme';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -23,7 +25,7 @@ export default function GruposTab() {
   const { session } = useAuth();
   const { groups, error, refresh, createGroup, joinGroup } = useGroups();
   const { colors } = useTheme();
-  const params = useLocalSearchParams<{ code?: string }>();
+  const params = useLocalSearchParams<{ code?: string; intent?: string }>();
   const [mode, setMode] = useState<'list' | 'crear' | 'codigo'>('list');
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState<(typeof GROUP_EMOJIS)[number]>('✦');
@@ -42,8 +44,11 @@ export default function GruposTab() {
     if (typeof params.code === 'string' && params.code.trim()) {
       setCode(params.code.trim().toUpperCase());
       setMode('codigo');
+      return;
     }
-  }, [params.code]);
+    if (params.intent === 'join') setMode('codigo');
+    if (params.intent === 'create') setMode('crear');
+  }, [params.code, params.intent]);
 
   const goNeedAccount = () => router.push('/onboarding');
 
@@ -52,10 +57,9 @@ export default function GruposTab() {
     setBusy(true);
     setLocalError(null);
     try {
-      const id = await createGroup(name, emoji, color);
+      await createGroup(name, emoji, color);
       setMode('list');
       setName('');
-      router.push({ pathname: '/grupo/[id]', params: { id } });
     } catch (caught) {
       setLocalError(caught instanceof Error ? caught.message : 'No se pudo crear.');
     } finally {
@@ -68,10 +72,9 @@ export default function GruposTab() {
     setBusy(true);
     setLocalError(null);
     try {
-      const id = await joinGroup(code);
+      await joinGroup(code);
       setMode('list');
       setCode('');
-      router.push({ pathname: '/grupo/[id]', params: { id } });
     } catch (caught) {
       setLocalError(caught instanceof Error ? caught.message : 'No se pudo unir.');
     } finally {
@@ -79,26 +82,32 @@ export default function GruposTab() {
     }
   };
 
+  if (mode === 'list' && groups.length === 1) {
+    return <GroupHomeView groupId={groups[0].id} embedded />;
+  }
+
   return (
     <Screen refreshing={false} onRefresh={() => void refresh()}>
-      <Enter>
-        <AppText variant="label" tone="amber">
-          Grupo
-        </AppText>
-        <AppText variant="title" style={{ marginTop: 8 }}>
-          {groups.length === 0 ? 'La iglesia, de a varios' : 'Tus grupos'}
-        </AppText>
-        <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
-          El dúo sigue siendo de a dos. Acá leen, oran y se retan con la gente de la iglesia.
-        </AppText>
-      </Enter>
+      {groups.length > 0 ? (
+        <Enter>
+          <AppText variant="label" tone="amber">
+            Grupo
+          </AppText>
+          <AppText variant="title" style={{ marginTop: 8 }}>
+            Tus grupos
+          </AppText>
+          <AppText variant="ui" tone="soft" style={{ marginTop: 8 }}>
+            {GROUP_WHAT_IT_IS}
+          </AppText>
+        </Enter>
+      ) : null}
 
       {mode === 'crear' ? (
         <Enter delay={60} style={{ marginTop: space.lg }}>
           <AppText variant="label" tone="amber">
             Nombre
           </AppText>
-          <Field value={name} onChangeText={setName} placeholder="Mesa de Emaús" autoCapitalize="words" />
+          <Field value={name} onChangeText={setName} placeholder="Jóvenes de la iglesia" autoCapitalize="words" />
           <AppText variant="label" tone="amber" style={{ marginTop: space.md }}>
             Marca
           </AppText>
@@ -170,32 +179,13 @@ export default function GruposTab() {
       ) : null}
 
       {mode === 'list' && groups.length === 0 ? (
-        <Enter delay={80}>
-          <View style={{ alignItems: 'center', paddingTop: space.xl }}>
-            <AuroraOrb />
-            <AppText variant="title" style={{ textAlign: 'center' }}>
-              Todavía no hay grupo
-            </AppText>
-            <AppText variant="ui" tone="soft" style={{ textAlign: 'center', marginTop: 8, maxWidth: 280 }}>
-              Un código, un sí, y leen juntos. El dúo no se toca.
-            </AppText>
-          </View>
-          <Button
-            label="Crear grupo"
-            variant="solid"
-            style={{ marginTop: space.lg }}
-            onPress={() => (session ? setMode('crear') : goNeedAccount())}
-          />
-          <Button
-            label="Tengo un código →"
-            variant="inline"
-            style={{ marginTop: 14 }}
-            onPress={() => (session ? setMode('codigo') : goNeedAccount())}
-          />
-        </Enter>
+        <GroupWelcome
+          onCreate={() => (session ? setMode('crear') : goNeedAccount())}
+          onJoin={() => (session ? setMode('codigo') : goNeedAccount())}
+        />
       ) : null}
 
-      {mode === 'list' && groups.length > 0 ? (
+      {mode === 'list' && groups.length > 1 ? (
         <View style={{ marginTop: space.lg, gap: 10 }}>
           {groups.map((group) => (
             <PressScale

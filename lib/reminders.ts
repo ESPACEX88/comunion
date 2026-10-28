@@ -145,9 +145,9 @@ export async function scheduleAppReminders(prefs: ReminderPrefs, hasDuo: boolean
     await Notifications.scheduleNotificationAsync({
       identifier: DUO_REMINDER_ID,
       content: {
-        title: 'Juntas',
-        body: 'El dúo te espera: oración o el pasaje de hoy.',
-        data: { screen: 'nosotros' },
+        title: 'El grupo',
+        body: 'Hay lectura y oración esperándote.',
+        data: { screen: 'grupos' },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -172,8 +172,8 @@ export async function previewReminder(kind: 'solo' | 'duo') {
             body: 'Hay un pasaje esperándote. Un rato, cuando quieras.',
           }
         : {
-            title: 'Juntas',
-            body: 'El dúo te espera: oración o el pasaje de hoy.',
+            title: 'El grupo',
+            body: 'Hay lectura y oración esperándote.',
           },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

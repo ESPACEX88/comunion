@@ -9,9 +9,22 @@ export type { GroupColorId };
 import { PSALMS_PLAN } from '@/features/plans/content';
 import { todayKey, weekStartMonday } from '@/lib/date';
 import { getSupabase } from '@/lib/supabase';
+import * as Linking from 'expo-linking';
+
+export function groupJoinPath(code: string) {
+  const clean = code.trim().toUpperCase();
+  return `/grupo/unirse?code=${encodeURIComponent(clean)}`;
+}
+
+export function groupInviteUrl(code: string) {
+  return Linking.createURL('/grupo/unirse', {
+    queryParams: { code: code.trim().toUpperCase() },
+  });
+}
 
 export function groupInviteMessage(name: string, code: string) {
-  return `Te invito al grupo «${name}» en Comunión. Código: ${code}\nAbrí la app → Grupo → Tengo un código.`;
+  const clean = code.trim().toUpperCase();
+  return `Te invito al grupo «${name}» en Comunión. Código: ${clean}\n${groupInviteUrl(clean)}`;
 }
 
 function explain(error: { message: string } | null, fallback: string) {

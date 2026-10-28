@@ -5,42 +5,93 @@ import { Ornament } from '@/components/ui/Ornament';
 import { Screen } from '@/components/ui/Screen';
 import { useAppState } from '@/features/app-state/AppStateProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { EXAMPLE_INVITE_CODE } from '@/features/plans/content';
+import {
+  GROUP_COLOR_HEX,
+  GROUP_COLOR_IDS,
+  GROUP_EMOJIS,
+  type GroupColorId,
+} from '@/features/groups/challenges';
+import { GROUP_WHAT_IT_IS } from '@/features/groups/copy';
+import { useGroups } from '@/features/groups/GroupsProvider';
 import { radius, space, useTheme } from '@/theme';
 import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 export default function OnboardingGroup() {
   const { draft, setDraft, state, enterSolo } = useAppState();
   const { session } = useAuth();
+  const { groups, createGroup, joinGroup } = useGroups();
+  const { colors } = useTheme();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emoji, setEmoji] = useState<(typeof GROUP_EMOJIS)[number]>('✦');
+  const [color, setColor] = useState<GroupColorId>('amber');
 
-  if (state.remoteDuoId) {
+  if (state.onboardingComplete && groups.length > 0) {
     return <Redirect href="/(tabs)" />;
   }
+
+  const finish = async () => {
+    await enterSolo();
+    router.replace('/(tabs)/grupos');
+  };
+
+  const onCreate = async () => {
+    if (!session) {
+      await finish();
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await createGroup(draft.groupName.trim() || draft.name.trim() || 'Nuestro grupo', emoji, color);
+      await finish();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'No se pudo crear el grupo.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onJoin = async () => {
+    if (!session) {
+      router.push('/onboarding');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await joinGroup(draft.inviteCode);
+      await finish();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'No se pudo unir.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Screen>
       <AppText variant="label" tone="olive">
-        Comunión · el dúo
+        Comunión · el grupo
       </AppText>
       <AppText variant="title" style={{ marginTop: space.md }}>
-        El dúo se suma. No es requisito.
+        Crear un grupo o unirme con código
       </AppText>
       <Ornament />
       <AppText variant="body" tone="soft">
-        {session
-          ? 'Si hay alguien con quien leer, creá el dúo o uníte. Si no, seguí en solitario. Tu diario y tu plan quedan solo para vos. El grupo de iglesia, si hay, está en la pestaña Grupo.'
-          : 'Podés entrar sola en este teléfono, o armar un dúo mock para ver cómo se siente de a dos.'}
+        {GROUP_WHAT_IT_IS}
       </AppText>
       <View style={{ height: space.lg }} />
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         <Choice
-          label="Crear dúo"
+          label="Crear un grupo"
           active={draft.mode === 'create'}
           onPress={() => setDraft({ mode: 'create' })}
         />
         <Choice
-          label="Unirme"
+          label="Tengo un código"
           active={draft.mode === 'join'}
           onPress={() => setDraft({ mode: 'join' })}
         />
@@ -49,13 +100,51 @@ export default function OnboardingGroup() {
       {draft.mode === 'create' ? (
         <>
           <AppText variant="label" tone="amber">
-            Nombre del dúo
+            Nombre del grupo
           </AppText>
           <Field
             value={draft.groupName}
             onChangeText={(groupName) => setDraft({ groupName })}
-            placeholder="Nosotros"
+            placeholder="Jóvenes de la iglesia"
           />
+          <AppText variant="label" tone="amber" style={{ marginTop: space.md }}>
+            Marca
+          </AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+            {GROUP_EMOJIS.map((mark) => (
+              <Pressable
+                key={mark}
+                onPress={() => setEmoji(mark)}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: emoji === mark ? colors.glassStrong : colors.glass,
+                  borderWidth: 1,
+                  borderColor: emoji === mark ? colors.amber : colors.glassBorder,
+                }}>
+                <AppText variant="subtitle">{mark}</AppText>
+              </Pressable>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: space.md }}>
+            {GROUP_COLOR_IDS.map((id) => (
+              <Pressable
+                key={id}
+                onPress={() => setColor(id)}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: GROUP_COLOR_HEX[id],
+                  borderWidth: color === id ? 2 : 0,
+                  borderColor: colors.ink,
+                }}
+              />
+            ))}
+          </View>
         </>
       ) : (
         <>
@@ -64,21 +153,38 @@ export default function OnboardingGroup() {
           </AppText>
           <Field
             value={draft.inviteCode}
-            onChangeText={(inviteCode) => setDraft({ inviteCode })}
+            onChangeText={(inviteCode) => setDraft({ inviteCode: inviteCode.toUpperCase() })}
             placeholder="A3F9C2"
             autoCapitalize="characters"
           />
           <AppText variant="caption" tone="soft" style={{ marginTop: 8 }}>
-            {session
-              ? 'El código lo comparte quien creó el dúo. Seis letras o números.'
-              : `En el mock local podés probar ${EXAMPLE_INVITE_CODE}.`}
+            El código lo comparte quien creó el grupo. Seis letras o números.
           </AppText>
         </>
       )}
+      {error ? (
+        <AppText variant="ui" style={{ color: colors.terracotta, marginTop: space.md }}>
+          {error}
+        </AppText>
+      ) : null}
       <View style={{ height: space.xl }} />
-      <Button label="El plan de a dos" onPress={() => router.push('/onboarding/plan')} />
       <Button
-        label="Seguir en solitario"
+        label={
+          busy
+            ? 'Un segundo…'
+            : draft.mode === 'create'
+              ? session
+                ? 'Crear grupo'
+                : 'Primero tu cuenta'
+              : session
+                ? 'Unirme'
+                : 'Primero tu cuenta'
+        }
+        disabled={busy}
+        onPress={() => void (draft.mode === 'create' ? onCreate() : onJoin())}
+      />
+      <Button
+        label="Ahora no"
         variant="ghost"
         style={{ marginTop: 10 }}
         onPress={async () => {
@@ -113,7 +219,7 @@ function Choice({
         backgroundColor: active ? colors.charcoal : colors.paper,
         alignItems: 'center',
       }}>
-      <AppText variant="ui" style={{ color: active ? colors.amberSoft : colors.charcoal }}>
+      <AppText variant="ui" style={{ color: active ? colors.amberSoft : colors.charcoal, textAlign: 'center' }}>
         {label}
       </AppText>
     </Pressable>

@@ -41,7 +41,7 @@ const ReminderContext = createContext<ReminderContextValue | null>(null);
 
 export function ReminderProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { hasDuo, state } = useAppState();
+  const { state } = useAppState();
   const [prefs, setPrefs] = useState<ReminderPrefs>(defaultReminderPrefs);
   const [ready, setReady] = useState(false);
   const [armed, setArmed] = useState(true);
@@ -87,8 +87,8 @@ export function ReminderProvider({ children }: { children: ReactNode }) {
       void cancelAppReminders();
       return;
     }
-    void scheduleAppReminders(prefs, hasDuo);
-  }, [armed, hasDuo, prefs, ready, state.onboardingComplete, user]);
+    void scheduleAppReminders(prefs, false);
+  }, [armed, prefs, ready, state.onboardingComplete, user]);
 
   const requestAccess = useCallback(async () => {
     const granted = await requestReminderPermission();
