@@ -8,7 +8,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { GROUP_COLOR_HEX } from '@/features/groups/challenges';
 import { useGroups } from '@/features/groups/GroupsProvider';
 import { confirmLeaveGroup, confirmRemoveMember } from '@/features/groups/leaveConfirm';
-import { useGroupLive } from '@/features/groups/useGroupLive';
+import { useActiveGroupLive } from '@/features/groups/useGroupLive';
 import { groupInviteMessage } from '@/lib/groups';
 import { space, useTheme } from '@/theme';
 import * as Clipboard from 'expo-clipboard';
@@ -21,7 +21,7 @@ export default function GrupoMiembros() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const groupsApi = useGroups();
-  const { bundle, loading, error, refreshing, onRefresh, reload } = useGroupLive(id);
+  const { bundle, loading, error, refreshing, onRefresh, reload } = useActiveGroupLive();
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const selfId = user?.id ?? '';

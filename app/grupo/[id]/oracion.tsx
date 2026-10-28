@@ -9,7 +9,7 @@ import { Toggle } from '@/components/ui/Toggle';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { PRAYER_MAX } from '@/features/duo/moods';
 import { useGroups } from '@/features/groups/GroupsProvider';
-import { useGroupLive } from '@/features/groups/useGroupLive';
+import { useActiveGroupLive } from '@/features/groups/useGroupLive';
 import { space, useTheme } from '@/theme';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -20,7 +20,7 @@ export default function GrupoOracion() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const groupsApi = useGroups();
-  const { bundle, loading, error, refreshing, onRefresh, reload } = useGroupLive(id);
+  const { bundle, loading, error, refreshing, onRefresh, reload } = useActiveGroupLive();
   const [prayer, setPrayer] = useState('');
   const [anonymous, setAnonymous] = useState(false);
   const [busy, setBusy] = useState(false);

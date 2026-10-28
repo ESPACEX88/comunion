@@ -9,7 +9,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { GROUP_CHALLENGES, GROUP_COLOR_HEX } from '@/features/groups/challenges';
 import { useGroups } from '@/features/groups/GroupsProvider';
-import { useGroupLive } from '@/features/groups/useGroupLive';
+import { useActiveGroupLive } from '@/features/groups/useGroupLive';
 import { groupVerseOfDayRef } from '@/lib/bible/verseOfDay';
 import { planProgress, PSALMS_PLAN } from '@/features/plans/content';
 import { ensureGroupPsalmsPlan, ensureWeekChallenge } from '@/lib/groups';
@@ -25,7 +25,7 @@ export default function GrupoHome() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const groupsApi = useGroups();
-  const { bundle, loading, error, refreshing, onRefresh, reload } = useGroupLive(id);
+  const { bundle, loading, error, refreshing, onRefresh, reload } = useActiveGroupLive();
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const seeded = useRef(false);

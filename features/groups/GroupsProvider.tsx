@@ -22,7 +22,7 @@ import {
   type GroupColorId,
   type GroupSummary,
 } from '@/lib/groups';
-import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   createContext,
   useCallback,
@@ -144,47 +144,4 @@ export function useGroups(): GroupsContextValue {
   const ctx = useContext(GroupsContext);
   if (!ctx) throw new Error('useGroups debe usarse dentro de GroupsProvider');
   return ctx;
-}
-
-export function subscribeGroup(groupId: string, onChange: () => void) {
-  if (!isSupabaseConfigured()) return () => undefined;
-  const supabase = getSupabase();
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const ping = () => {
-    if (timer) return;
-    timer = setTimeout(() => {
-      timer = null;
-      onChange();
-    }, 400);
-  };
-  const channel = supabase
-    .channel(`group-${groupId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_plan_completions' }, ping)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'group_prayers', filter: `group_id=eq.${groupId}` },
-      ping,
-    )
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_prayer_marks' }, ping)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'group_verse_comments', filter: `group_id=eq.${groupId}` },
-      ping,
-    )
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'group_challenges', filter: `group_id=eq.${groupId}` },
-      ping,
-    )
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_challenge_checkins' }, ping)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
-      ping,
-    )
-    .subscribe();
-  return () => {
-    if (timer) clearTimeout(timer);
-    void supabase.removeChannel(channel);
-  };
 }
