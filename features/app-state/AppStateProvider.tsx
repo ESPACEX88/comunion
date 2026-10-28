@@ -18,7 +18,7 @@ import {
   type PlanProgress,
 } from '@/features/plans/content';
 import { dataSource } from '@/lib/data-source';
-import { getSupabase } from '@/lib/supabase';
+import { subscribeDuoLive } from '@/lib/realtime';
 import { addDays, asDayKey, todayKey, weekStartMonday, yesterday } from '@/lib/date';
 import {
   consecutiveStreakWithGrace,
@@ -72,6 +72,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -365,41 +366,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, [live, refreshLive]);
 
+  const refreshLiveRef = useRef(refreshLive);
+  refreshLiveRef.current = refreshLive;
+
   useEffect(() => {
     if (!user || !state.remoteDuoId) return;
-    const supabase = getSupabase();
-    const duoId = state.remoteDuoId;
-    const planId = state.remotePlanId;
-    const channel = supabase.channel(`duo-live:${duoId}`);
-    let bounce: ReturnType<typeof setTimeout> | null = null;
-    const onRemoteChange = () => {
-      if (bounce) clearTimeout(bounce);
-      bounce = setTimeout(() => {
-        void refreshLive({ force: true });
-      }, 280);
-    };
-    for (const table of ['check_ins', 'prayers', 'heart_verses'] as const) {
-      channel.on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table, filter: `duo_id=eq.${duoId}` },
-        onRemoteChange,
-      );
+    try {
+      return subscribeDuoLive(state.remoteDuoId, state.remotePlanId, () => {
+        void refreshLiveRef.current({ force: true });
+      });
+    } catch {
+      return undefined;
     }
-    if (planId) {
-      for (const table of ['plan_completions', 'plan_answers'] as const) {
-        channel.on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table, filter: `plan_id=eq.${planId}` },
-          onRemoteChange,
-        );
-      }
-    }
-    channel.subscribe();
-    return () => {
-      if (bounce) clearTimeout(bounce);
-      void supabase.removeChannel(channel);
-    };
-  }, [refreshLive, state.remoteDuoId, state.remotePlanId, user]);
+  }, [state.remoteDuoId, state.remotePlanId, user]);
 
   const setDraft = useCallback((patch: Partial<OnboardingDraft>) => {
     setDraftState((prev) => ({ ...prev, ...patch }));
